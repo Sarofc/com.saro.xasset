@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Saro.XAsset
+namespace Saro.XAsset.Build
 {
     public class BuildMethod
     {
@@ -13,7 +13,7 @@ namespace Saro.XAsset
         public Func<bool> callback;
 
         private static List<BuildMethod> s_BuildMethods;
-        public static List<BuildMethod> BuildMethods
+        public static List<BuildMethod> BuildMethodCollection
         {
             get
             {
@@ -27,40 +27,44 @@ namespace Saro.XAsset
 
         private static List<BuildMethod> GetBuildMethods()
         {
+            var allTypes = Utility.RefelctionUtility.GetSubClassTypesAllAssemblies(typeof(IBuildProcessor));
+
             var ret = new List<BuildMethod>();
-            var assembly = Assembly.Load("Saro.XAsset.Editor");
-            var type = assembly.GetType("Saro.XAsset.Build.BuildMethods");
-            var methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-            foreach (var method in methods)
+
+            foreach (var type in allTypes)
             {
-                var attr = method.GetCustomAttribute<XAssetBuildMethodAttribute>();
-                if (attr != null)
+                var methods = type.GetMethods(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+                foreach (var method in methods)
                 {
-                    var buildMethod = new BuildMethod()
+                    var attr = method.GetCustomAttribute<XAssetBuildMethodAttribute>();
+                    if (attr != null)
                     {
-                        order = attr.order,
-                        description = attr.description,
-                        required = attr.required,
-                        selected = attr.required,
-                        callback = () =>
+                        var buildMethod = new BuildMethod()
                         {
-                            if (method.ReturnType == typeof(bool))
+                            order = attr.executeOrder,
+                            description = attr.displayName,
+                            required = attr.required,
+                            selected = attr.required,
+                            callback = () =>
                             {
-                                return (bool)method.Invoke(null, null);
-                            }
-                            else
-                            {
-                                try { method.Invoke(null, null); }
-                                catch (Exception e)
+                                if (method.ReturnType == typeof(bool))
                                 {
-                                    UnityEngine.Debug.LogException(e);
-                                    return false;
+                                    return (bool)method.Invoke(null, null);
                                 }
-                                return true;
+                                else
+                                {
+                                    try { method.Invoke(null, null); }
+                                    catch (Exception e)
+                                    {
+                                        UnityEngine.Debug.LogException(e);
+                                        return false;
+                                    }
+                                    return true;
+                                }
                             }
-                        }
-                    };
-                    ret.Add(buildMethod);
+                        };
+                        ret.Add(buildMethod);
+                    }
                 }
             }
 
@@ -70,16 +74,30 @@ namespace Saro.XAsset
         }
     }
 
+    /// <summary>
+    /// XAsset自动化打包流程方法
+    /// <see cref="BuildMethods"/>
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
     public sealed class XAssetBuildMethodAttribute : Attribute
     {
-        public int order;
-        public string description;
+        /// <summary>
+        /// 执行顺序
+        /// </summary>
+        public int executeOrder;
+        /// <summary>
+        /// 显示名称
+        /// </summary>
+        public string displayName;
+        /// <summary>
+        /// 是否必须被执行
+        /// </summary>
         public bool required;
 
-        public XAssetBuildMethodAttribute(int order, string description, bool required = true)
+        public XAssetBuildMethodAttribute(int executeOrder, string displayName, bool required = true)
         {
-            this.order = order;
-            this.description = description;
+            this.executeOrder = executeOrder;
+            this.displayName = displayName;
             this.required = required;
         }
     }

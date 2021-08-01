@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Saro.XAsset.Build
 {
-    public class EditorRuntimeInitializeOnLoad
+    public class XAssetEditorRuntimeInitializeOnLoad
     {
 #if UNITY_2019_1_OR_NEWER
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
@@ -13,12 +13,18 @@ namespace Saro.XAsset.Build
 #endif
         private static void OnInitialize()
         {
-            XAssetComponent.s_RuntimeMode = BuildScript.GetXAssetSettings().runtimeMode;
+#if UNITY_EDITOR
+            XAssetComponent.s_RuntimeMode = XAssetBuildScript.GetXAssetSettings().runtimeMode;
+#endif
 
             XAssetComponent.s_EditorLoader = AssetDatabase.LoadAssetAtPath;
+        }
 
+        [System.Obsolete("没用")]
+        void ProgressEditorSceneSettings()
+        {
             var assets = new List<string>();
-            var rules = BuildScript.GetXAssetBuildRules();
+            var rules = XAssetBuildScript.GetXAssetBuildRules();
             foreach (var asset in rules.scenesInBuild)
             {
                 var path = AssetDatabase.GetAssetPath(asset);

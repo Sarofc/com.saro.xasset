@@ -17,6 +17,8 @@ namespace Saro.XAsset.Build
         [Tooltip("Assetbundle打包设置")]
         public BuildAssetBundleOptions buildAssetBundleOptions = BuildAssetBundleOptions.DeterministicAssetBundle | BuildAssetBundleOptions.ChunkBasedCompression;
 
+        [Tooltip("详细打包报告")]
+        public bool detailBuildReport;
 
         [HideInInspector]
         public int buildMethodOptions;

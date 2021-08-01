@@ -31,7 +31,11 @@ namespace Saro.XAsset
         public const string k_XAssetManifestAsset = "Assets/XAsset/XAssetManifest.asset";
         public const string k_AssetExtension = ".unity3d";
 
+#if UNITY_EDITOR
         public static bool s_RuntimeMode = true;
+#else
+        public readonly static bool s_RuntimeMode = true;
+#endif
         public static Func<string, Type, UnityEngine.Object> s_EditorLoader = null;
 
         [System.Diagnostics.Conditional("DEBUG_XASSET")]

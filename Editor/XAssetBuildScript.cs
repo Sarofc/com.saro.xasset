@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Saro.XAsset.Build
 {
-    public static class BuildScript
+    public static class XAssetBuildScript
     {
         public static string s_DLCFolder = "ExtraResources/DLC/" + GetPlatformName();
         public static string s_DatFolder = s_DLCFolder + "/Dat";
@@ -122,6 +122,29 @@ namespace Saro.XAsset.Build
             return scenes.ToArray();
         }
 
+        public static List<string> GetEditorBuildSettingsScenes()
+        {
+            var scenes = new List<string>();
+            var rules = XAssetBuildScript.GetXAssetBuildRules();
+            foreach (var asset in rules.scenesInBuild)
+            {
+                var path = AssetDatabase.GetAssetPath(asset);
+                if (string.IsNullOrEmpty(path))
+                {
+                    continue;
+                }
+                scenes.Add(path);
+            }
+            foreach (var rule in rules.rules)
+            {
+                if (rule.searchPattern.Contains("*.unity"))
+                {
+                    scenes.AddRange(rule.GetAssets());
+                }
+            }
+            return scenes;
+        }
+
         private static string GetAssetBundleManifestFilePath()
         {
             var relativeAssetBundlesOutputPathForPlatform = Path.Combine("Asset", GetPlatformName());
@@ -154,8 +177,18 @@ namespace Saro.XAsset.Build
                 locationPathName = outputPath + targetName,
                 assetBundleManifestPath = GetAssetBundleManifestFilePath(),
                 target = EditorUserBuildSettings.activeBuildTarget,
-                options = EditorUserBuildSettings.development ? BuildOptions.Development : BuildOptions.None
             };
+
+            if (EditorUserBuildSettings.development)
+            {
+                buildPlayerOptions.options |= BuildOptions.Development;
+            }
+
+            if (GetXAssetSettings().detailBuildReport)
+            {
+                buildPlayerOptions.options |= BuildOptions.DetailedBuildReport;
+            }
+
             BuildPipeline.BuildPlayer(buildPlayerOptions);
             OpenFolderUtility.OpenDirectory(outputPath);
         }
