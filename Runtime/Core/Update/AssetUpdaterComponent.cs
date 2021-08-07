@@ -481,7 +481,7 @@ namespace Saro.XAsset.Update
                 ((IUpdater)this).OnMessage("初始化成功!");
                 ((IUpdater)this).OnProgress(1);
 
-                var sceneRequest = XAssetComponent.Get().LoadSceneAsync("Assets/Res/Scene/level-1.unity");
+                var sceneRequest = XAssetComponent.Get().LoadSceneCallback("Assets/Res/Scene/level-1.unity");
                 sceneRequest.Completed += _r =>
                 {
                     //Debug.LogError("加载成功: " + _r.Asset.name);
@@ -543,7 +543,7 @@ namespace Saro.XAsset.Update
 
         private string GetDownloadURL(string fileName)
         {
-            return string.Format("{0}{1}/{2}", m_BaseURL, XAssetComponent.GetCurrentPlatformName(), fileName);
+            return string.Format("{0}{1}/{2}", m_BaseURL, XAssetComponent.GetCurrentPlatformAssetBundleFolderName(), fileName);
         }
 
         private static string GetDlcPath()
@@ -553,7 +553,7 @@ namespace Saro.XAsset.Update
 
         private static string GetBasePath()
         {
-            return GetStreamingAssetsPath() + "/" + XAssetComponent.GetCurrentPlatformName() + "/";
+            return GetStreamingAssetsPath() + "/" + XAssetComponent.GetCurrentPlatformAssetBundleFolderName() + "/";
         }
 
         private static string GetStreamingAssetsPath()

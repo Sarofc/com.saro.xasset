@@ -1,11 +1,13 @@
 {
     "name": "Saro.XAsset.Editor",
+    "rootNamespace": "",
     "references": [
         "Saro.MGF",
         "Saro.MGF.Editor",
-        "Saro.XAsset"
+        "Saro.XAsset",
+        "Unity.ScriptableBuildPipeline",
+        "Unity.ScriptableBuildPipeline.Editor"
     ],
-    "optionalUnityReferences": [],
     "includePlatforms": [
         "Editor"
     ],
@@ -14,5 +16,7 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": []
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

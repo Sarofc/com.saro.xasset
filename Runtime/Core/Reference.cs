@@ -1,10 +1,11 @@
 
 using System.Collections.Generic;
+using Saro.Core;
 using UnityEngine;
 
 namespace Saro.XAsset
 {
-    public class Reference
+    public class Reference : IRefCounter
     {
         /// <summary>
         /// 引用计数
@@ -27,7 +28,7 @@ namespace Saro.XAsset
                     var item = m_Requires[i];
                     if (item != null)
                         continue;
-                    Release();
+                    DecreaseRefCount();
                     m_Requires.RemoveAt(i);
                     i--;
                 }
@@ -37,12 +38,12 @@ namespace Saro.XAsset
             return m_RefCount <= 0;
         }
 
-        public void Retain()
+        public void IncreaseRefCount()
         {
             m_RefCount++;
         }
 
-        public void Release()
+        public void DecreaseRefCount()
         {
             m_RefCount--;
         }
@@ -53,7 +54,7 @@ namespace Saro.XAsset
                 m_Requires = new List<Object>();
 
             m_Requires.Add(obj);
-            Retain();
+            IncreaseRefCount();
         }
 
         public void Dequire(Object obj)
@@ -62,7 +63,7 @@ namespace Saro.XAsset
                 return;
 
             if (m_Requires.Remove(obj))
-                Release();
+                DecreaseRefCount();
         }
     }
 }

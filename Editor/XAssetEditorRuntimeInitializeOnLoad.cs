@@ -15,9 +15,8 @@ namespace Saro.XAsset.Build
         {
 #if UNITY_EDITOR
             XAssetComponent.s_RuntimeMode = XAssetBuildScript.GetXAssetSettings().runtimeMode;
-#endif
-
             XAssetComponent.s_EditorLoader = AssetDatabase.LoadAssetAtPath;
+#endif
         }
 
         [System.Obsolete("没用")]

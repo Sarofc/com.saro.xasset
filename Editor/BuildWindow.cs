@@ -141,10 +141,10 @@ namespace Saro.XAsset.Build
                             {
                                 if (buildMethod.callback.Invoke() == false)
                                 {
-                                    throw new System.Exception(string.Format("Execute {0} Failed, Abort！", buildMethod.description));
+                                    throw new System.Exception(string.Format("Execute {0} Failed, Abort！", buildMethod.displayName));
                                 }
 
-                                Debug.Log($"Execute {buildMethod.description} Successfull");
+                                Debug.Log($"Execute {buildMethod.displayName} Successfull");
                             }
                         }
                     });
@@ -171,7 +171,7 @@ namespace Saro.XAsset.Build
                 rect1.x += 10f;
                 rect1.width = 50f;
 
-                
+
                 buildMethod.selected = (m_XAssetSettings.buildMethodOptions & (1 << index)) != 0 || buildMethod.required;
 
                 var tmpEnable = GUI.enabled;
@@ -184,7 +184,7 @@ namespace Saro.XAsset.Build
 
                 rect1.x = 40f;
                 rect1.width = 300f;
-                EditorGUI.LabelField(rect1, string.Format("[{0:00}] {1}", buildMethod.order, buildMethod.description), buildMethod.required ? s_Styles.style_FontBlodAndItalic : s_Styles.style_FontItalic);
+                EditorGUI.LabelField(rect1, string.Format("[{0:00}] {1}", buildMethod.order, buildMethod.displayName), buildMethod.required ? s_Styles.style_FontBlodAndItalic : s_Styles.style_FontItalic);
                 rect1.x = rect.width - 40;
                 rect1.width = 40;
                 rect1.height = EditorGUIUtility.singleLineHeight;
@@ -195,7 +195,7 @@ namespace Saro.XAsset.Build
                     {
                         if (buildMethod.callback.Invoke() == false)
                         {
-                            EditorUtility.DisplayDialog("Failed", string.Format("Execute {0} failed!", buildMethod.description), "OK");
+                            EditorUtility.DisplayDialog("Failed", string.Format("Execute {0} failed!", buildMethod.displayName), "OK");
                         }
                     });
                 }
@@ -285,19 +285,16 @@ namespace Saro.XAsset.Build
 
         private void ExecuteAction(System.Action action)
         {
+            EditorUtility.DisplayProgressBar("Wait...", "", 0);
+
             EditorApplication.delayCall = () =>
             {
                 EditorApplication.delayCall = null;
                 if (action != null)
                 {
-                    System.Diagnostics.Stopwatch watch = new System.Diagnostics.Stopwatch();
                     try
                     {
-                        watch.Start();
-
                         action();
-
-                        watch.Stop();
                     }
                     finally
                     {
@@ -305,7 +302,6 @@ namespace Saro.XAsset.Build
                     }
                 }
             };
-            EditorUtility.DisplayProgressBar("Wait...", "", 0);
         }
     }
 }

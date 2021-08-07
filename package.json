@@ -1,15 +1,17 @@
 {
     "name": "com.saro.xasset",
     "version": "0.0.1",
-    "displayName": "XAsset",
-    "description": "",
+    "displayName": "XAsset-MGF",
+    "description": "Unity构建工具，提供一键式出包，并且支持自定义构建流程。",
     "unity": "2019.4",
     "dependencies": {
-        "com.saro.mgf": "https://github.com/Sarofc/MGF.git"
+        "com.unity.scriptablebuildpipeline": "0.0.1-security",
+        "com.saro.mgf": "https://github.com/Sarofc/com.saro.mgf.git"
     },
     "keywords": [
         "asset",
-        "build"
+        "build",
+        "assetbundle"
     ],
     "author": {
         "name": "saro"

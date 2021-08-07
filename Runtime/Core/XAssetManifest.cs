@@ -23,6 +23,9 @@ namespace Saro.XAsset
 
     public class XAssetManifest : ScriptableObject
     {
+        /// <summary>
+        /// TODO ÔÝÊ±Î´Ö§³Ö
+        /// </summary>
         public string[] activeVariants = new string[0];
         public string[] dirs = new string[0];
         public AssetRef[] assets = new AssetRef[0];

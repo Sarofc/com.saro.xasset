@@ -7,7 +7,7 @@ namespace Saro.XAsset.Build
     public class BuildMethod
     {
         public int order;
-        public string description;
+        public string displayName;
         public bool required;
         public bool selected = false;
         public Func<bool> callback;
@@ -42,7 +42,7 @@ namespace Saro.XAsset.Build
                         var buildMethod = new BuildMethod()
                         {
                             order = attr.executeOrder,
-                            description = attr.displayName,
+                            displayName = attr.displayName,
                             required = attr.required,
                             selected = attr.required,
                             callback = () =>

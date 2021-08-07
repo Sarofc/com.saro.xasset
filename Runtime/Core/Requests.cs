@@ -9,7 +9,6 @@ using UnityEngine.SceneManagement;
 
 namespace Saro.XAsset
 {
-    using Debug = UnityEngine.Debug;
     using Object = UnityEngine.Object;
 
     public enum ELoadState
@@ -21,24 +20,39 @@ namespace Saro.XAsset
         Unload,
     }
 
-    public class AssetRequest : Reference, IAssetRequest, IEnumerator
+    public class AssetRequest : Reference, IAssetRequest
     {
+        /// <summary>
+        /// 资源类型
+        /// </summary>
         public Type AssetType { get; set; }
-        public string Url { get; set; }
+        /// <summary>
+        /// 资源路径
+        /// </summary>
+        public string AssetUrl { get; set; }
 
-        public ELoadState m_LoadState { get; protected set; }
+        /// <summary>
+        /// 加载状态
+        /// </summary>
+        public ELoadState LoadState { get; protected set; }
 
         public AssetRequest()
         {
             Asset = null;
-            m_LoadState = ELoadState.Init;
+            LoadState = ELoadState.Init;
         }
 
+        /// <summary>
+        /// 是否加载完，不管成功失败
+        /// </summary>
         public virtual bool IsDone
         {
             get { return true; }
         }
 
+        /// <summary>
+        /// 是否有报错
+        /// </summary>
         public virtual bool IsError
         {
             get
@@ -47,26 +61,41 @@ namespace Saro.XAsset
             }
         }
 
+        /// <summary>
+        /// 加载进度
+        /// </summary>
         public virtual float Progress
         {
             get { return 1; }
         }
 
+        /// <summary>
+        /// 报错字符串
+        /// </summary>
         public virtual string Error { get; protected set; }
 
+        /// <summary>
+        /// 加载的文本
+        /// </summary>
         public string Text { get; protected set; }
 
+        /// <summary>
+        /// 加载的字节流
+        /// </summary>
         public byte[] Bytes { get; protected set; }
 
-        public Object Asset { get; internal set; }
+        /// <summary>
+        /// 加载的资源
+        /// </summary>
+        public Object Asset { get; protected set; }
 
         internal virtual void Load()
         {
             if (!XAssetComponent.s_RuntimeMode && XAssetComponent.s_EditorLoader != null)
-                Asset = XAssetComponent.s_EditorLoader(Url, AssetType);
+                Asset = XAssetComponent.s_EditorLoader(AssetUrl, AssetType);
             if (Asset == null)
             {
-                Error = "error! file not exist:" + Url;
+                Error = "error! file not exist:" + AssetUrl;
             }
         }
 
@@ -104,43 +133,6 @@ namespace Saro.XAsset
         }
 
         public Action<IAssetRequest> Completed { get; set; }
-
-        #region IEnumerator implementation
-
-        public object Current
-        {
-            get { return null; }
-        }
-
-        public bool MoveNext()
-        {
-            return !IsDone;
-        }
-
-        public void Reset()
-        {
-        }
-
-        public void Dispose()
-        {
-
-        }
-
-        #endregion
-
-        #region Job
-
-        public bool HasFailed()
-        {
-            return IsDone && IsError;
-        }
-
-        public bool IsReady()
-        {
-            return IsDone && !IsError;
-        }
-
-        #endregion
     }
 
     public class ManifestRequest : AssetRequest
@@ -152,7 +144,7 @@ namespace Saro.XAsset
         {
             get
             {
-                switch (m_LoadState)
+                switch (LoadState)
                 {
                     case ELoadState.LoadAssetBundle:
                         return m_Request.Progress;
@@ -174,40 +166,45 @@ namespace Saro.XAsset
                     return true;
                 }
 
-                return m_LoadState == ELoadState.Loaded;
+                return LoadState == ELoadState.Loaded;
             }
         }
 
         internal override void Load()
         {
-            m_AssetName = Path.GetFileName(Url);
+            m_AssetName = Path.GetFileName(AssetUrl);
             if (XAssetComponent.s_RuntimeMode)
             {
                 var assetBundleName = m_AssetName.Replace(".asset", ".unity3d").ToLower();
-                Debug.LogError($"[XAsset] asset: {m_AssetName} \nurl: {Url} \nbundleName: {assetBundleName}");
+                //Debug.LogError($"[XAsset] asset: {m_AssetName} \nurl: {Url} \nbundleName: {assetBundleName}");
                 m_Request = XAssetComponent.Get().LoadBundleAsync(assetBundleName);
                 m_Request.Completed = Request_completed;
-                m_LoadState = ELoadState.LoadAssetBundle;
+                LoadState = ELoadState.LoadAssetBundle;
             }
             else
             {
-                m_LoadState = ELoadState.Loaded;
+                LoadState = ELoadState.Loaded;
             }
         }
 
         private void Request_completed(IAssetRequest ar)
         {
             m_Request.Completed = null;
-            if (m_Request.AssetBundle == null)
+
+            if (m_Request.IsError)
             {
-                base.Error = "assetBundle == null";
+                Error = m_Request.Error;
             }
             else
             {
-                var manifest = m_Request.AssetBundle.LoadAsset<XAssetManifest>(m_AssetName);
+                //var manifest = m_Request.AssetBundle.LoadAsset<XAssetManifest>(m_AssetName);
+                var manifest = m_Request.AssetBundle.LoadAsset<XAssetManifest>(AssetUrl);
+
+                //Debug.LogError($"print ab \"{m_Request.AssetBundle.name}\" \n{String.Join("\n", m_Request.AssetBundle.GetAllAssetNames())}");
+
                 if (manifest == null)
                 {
-                    base.Error = "manifest == null";
+                    Error = "manifest == null. url: " + m_AssetName;
                 }
                 else
                 {
@@ -217,14 +214,14 @@ namespace Saro.XAsset
                 }
             }
 
-            m_LoadState = ELoadState.Loaded;
+            LoadState = ELoadState.Loaded;
         }
 
         internal override void Unload()
         {
             if (m_Request != null)
             {
-                m_Request.Release();
+                m_Request.DecreaseRefCount();
                 m_Request = null;
             }
         }
@@ -233,7 +230,7 @@ namespace Saro.XAsset
     public class BundleAssetRequest : AssetRequest
     {
         protected readonly string m_AssetBundleName;
-        protected BundleRequest m_Bundle;
+        protected BundleRequest m_BundleRequest;
 
         public BundleAssetRequest(string bundle)
         {
@@ -246,17 +243,17 @@ namespace Saro.XAsset
             // 同一帧，先调异步接口，再调用同步接口，同步接口 bundle.assetBundle 报空
             // （不确定异步加载bundle未完成时的情况）
 
-            m_Bundle = XAssetComponent.Get().LoadBundle(m_AssetBundleName);
-            var assetName = Path.GetFileName(Url);
-            Asset = m_Bundle.AssetBundle.LoadAsset(assetName, AssetType);
+            m_BundleRequest = XAssetComponent.Get().LoadBundle(m_AssetBundleName);
+
+            Asset = m_BundleRequest.AssetBundle.LoadAsset(AssetUrl, AssetType);
         }
 
         internal override void Unload()
         {
-            if (m_Bundle != null)
+            if (m_BundleRequest != null)
             {
-                m_Bundle.Release();
-                m_Bundle = null;
+                m_BundleRequest.DecreaseRefCount();
+                m_BundleRequest = null;
             }
 
             Asset = null;
@@ -265,7 +262,7 @@ namespace Saro.XAsset
 
     public class BundleAssetAsyncRequest : BundleAssetRequest
     {
-        private AssetBundleRequest m_Request;
+        private AssetBundleRequest m_AssetBundleRequest;
 
         public BundleAssetAsyncRequest(string bundle)
             : base(bundle)
@@ -276,17 +273,17 @@ namespace Saro.XAsset
         {
             get
             {
-                if (Error != null || m_Bundle.Error != null)
+                if (Error != null || m_BundleRequest.Error != null)
                     return true;
 
-                for (int i = 0, max = m_Bundle.Dependencies.Count; i < max; i++)
+                for (int i = 0, max = m_BundleRequest.Dependencies.Count; i < max; i++)
                 {
-                    var item = m_Bundle.Dependencies[i];
+                    var item = m_BundleRequest.Dependencies[i];
                     if (item.Error != null)
                         return true;
                 }
 
-                switch (m_LoadState)
+                switch (LoadState)
                 {
                     case ELoadState.Init:
                         return false;
@@ -294,25 +291,24 @@ namespace Saro.XAsset
                         return true;
                     case ELoadState.LoadAssetBundle:
                         {
-                            if (!m_Bundle.IsDone)
+                            if (!m_BundleRequest.IsDone)
                                 return false;
 
-                            for (int i = 0, max = m_Bundle.Dependencies.Count; i < max; i++)
+                            for (int i = 0, max = m_BundleRequest.Dependencies.Count; i < max; i++)
                             {
-                                var item = m_Bundle.Dependencies[i];
+                                var item = m_BundleRequest.Dependencies[i];
                                 if (!item.IsDone)
                                     return false;
                             }
 
-                            if (m_Bundle.AssetBundle == null)
+                            if (m_BundleRequest.AssetBundle == null)
                             {
                                 Error = "assetBundle == null";
                                 return true;
                             }
 
-                            var assetName = Path.GetFileName(Url);
-                            m_Request = m_Bundle.AssetBundle.LoadAssetAsync(assetName, AssetType);
-                            m_LoadState = ELoadState.LoadAsset;
+                            m_AssetBundleRequest = m_BundleRequest.AssetBundle.LoadAssetAsync(AssetUrl, AssetType);
+                            LoadState = ELoadState.LoadAsset;
                             break;
                         }
                     case ELoadState.Unload:
@@ -323,12 +319,12 @@ namespace Saro.XAsset
                         throw new ArgumentOutOfRangeException();
                 }
 
-                if (m_LoadState != ELoadState.LoadAsset)
+                if (LoadState != ELoadState.LoadAsset)
                     return false;
-                if (!m_Request.isDone)
+                if (!m_AssetBundleRequest.isDone)
                     return false;
-                Asset = m_Request.asset;
-                m_LoadState = ELoadState.Loaded;
+                Asset = m_AssetBundleRequest.asset;
+                LoadState = ELoadState.Loaded;
                 return true;
             }
         }
@@ -337,30 +333,30 @@ namespace Saro.XAsset
         {
             get
             {
-                var bundleProgress = m_Bundle.Progress;
-                if (m_Bundle.Dependencies.Count <= 0)
-                    return bundleProgress * 0.3f + (m_Request != null ? m_Request.progress * 0.7f : 0);
-                for (int i = 0, max = m_Bundle.Dependencies.Count; i < max; i++)
+                var bundleProgress = m_BundleRequest.Progress;
+                if (m_BundleRequest.Dependencies.Count <= 0)
+                    return bundleProgress * 0.3f + (m_AssetBundleRequest != null ? m_AssetBundleRequest.progress * 0.7f : 0);
+                for (int i = 0, max = m_BundleRequest.Dependencies.Count; i < max; i++)
                 {
-                    var item = m_Bundle.Dependencies[i];
+                    var item = m_BundleRequest.Dependencies[i];
                     bundleProgress += item.Progress;
                 }
 
-                return bundleProgress / (m_Bundle.Dependencies.Count + 1) * 0.3f +
-                       (m_Request != null ? m_Request.progress * 0.7f : 0);
+                return bundleProgress / (m_BundleRequest.Dependencies.Count + 1) * 0.3f +
+                       (m_AssetBundleRequest != null ? m_AssetBundleRequest.progress * 0.7f : 0);
             }
         }
 
         internal override void Load()
         {
-            m_Bundle = XAssetComponent.Get().LoadBundleAsync(m_AssetBundleName);
-            m_LoadState = ELoadState.LoadAssetBundle;
+            m_BundleRequest = XAssetComponent.Get().LoadBundleAsync(m_AssetBundleName);
+            LoadState = ELoadState.LoadAssetBundle;
         }
 
         internal override void Unload()
         {
-            m_Request = null;
-            m_LoadState = ELoadState.Unload;
+            m_AssetBundleRequest = null;
+            LoadState = ELoadState.Unload;
             base.Unload();
         }
     }
@@ -374,9 +370,9 @@ namespace Saro.XAsset
 
         public SceneAssetRequest(string path, bool addictive)
         {
-            Url = path;
+            AssetUrl = path;
             XAssetComponent.Get().GetAssetBundleName(path, out m_AssetBundleName);
-            m_SceneName = Path.GetFileNameWithoutExtension(Url);
+            m_SceneName = Path.GetFileNameWithoutExtension(AssetUrl);
             m_LoadSceneMode = addictive ? LoadSceneMode.Additive : LoadSceneMode.Single;
         }
 
@@ -398,13 +394,13 @@ namespace Saro.XAsset
                 try
                 {
                     SceneManager.LoadScene(m_SceneName, m_LoadSceneMode);
-                    m_LoadState = ELoadState.LoadAsset;
+                    LoadState = ELoadState.LoadAsset;
                 }
                 catch (Exception e)
                 {
                     Debug.LogException(e);
                     Error = e.ToString();
-                    m_LoadState = ELoadState.Loaded;
+                    LoadState = ELoadState.Loaded;
                 }
             }
         }
@@ -412,7 +408,7 @@ namespace Saro.XAsset
         internal override void Unload()
         {
             if (m_Bundle != null)
-                m_Bundle.Release();
+                m_Bundle.DecreaseRefCount();
 
             if (m_LoadSceneMode == LoadSceneMode.Additive)
             {
@@ -458,7 +454,7 @@ namespace Saro.XAsset
         {
             get
             {
-                switch (m_LoadState)
+                switch (LoadState)
                 {
                     case ELoadState.Loaded:
                         return true;
@@ -496,11 +492,11 @@ namespace Saro.XAsset
                         throw new ArgumentOutOfRangeException();
                 }
 
-                if (m_LoadState != ELoadState.LoadAsset)
+                if (LoadState != ELoadState.LoadAsset)
                     return false;
                 if (m_Request != null && !m_Request.isDone)
                     return false;
-                m_LoadState = ELoadState.Loaded;
+                LoadState = ELoadState.Loaded;
                 return true;
             }
         }
@@ -510,13 +506,13 @@ namespace Saro.XAsset
             try
             {
                 m_Request = SceneManager.LoadSceneAsync(m_SceneName, m_LoadSceneMode);
-                m_LoadState = ELoadState.LoadAsset;
+                LoadState = ELoadState.LoadAsset;
             }
             catch (Exception e)
             {
                 Debug.LogException(e);
                 Error = e.ToString();
-                m_LoadState = ELoadState.Loaded;
+                LoadState = ELoadState.Loaded;
             }
         }
 
@@ -525,7 +521,7 @@ namespace Saro.XAsset
             if (!string.IsNullOrEmpty(m_AssetBundleName))
             {
                 m_Bundle = XAssetComponent.Get().LoadBundleAsync(m_AssetBundleName);
-                m_LoadState = ELoadState.LoadAssetBundle;
+                LoadState = ELoadState.LoadAssetBundle;
             }
             else
             {
@@ -548,12 +544,12 @@ namespace Saro.XAsset
         {
             get
             {
-                if (m_LoadState == ELoadState.Init)
+                if (LoadState == ELoadState.Init)
                     return false;
-                if (m_LoadState == ELoadState.Loaded)
+                if (LoadState == ELoadState.Loaded)
                     return true;
 
-                if (m_LoadState == ELoadState.LoadAsset)
+                if (LoadState == ELoadState.LoadAsset)
                 {
                     if (m_Request == null || !string.IsNullOrEmpty(m_Request.error))
                         return true;
@@ -579,7 +575,7 @@ namespace Saro.XAsset
                             Asset = DownloadHandlerTexture.GetContent(m_Request);
                         }
 
-                        m_LoadState = ELoadState.Loaded;
+                        LoadState = ELoadState.Loaded;
                         return true;
                     }
 
@@ -604,20 +600,20 @@ namespace Saro.XAsset
         {
             if (AssetType == typeof(AudioClip))
             {
-                m_Request = UnityWebRequestMultimedia.GetAudioClip(Url, AudioType.WAV);
+                m_Request = UnityWebRequestMultimedia.GetAudioClip(AssetUrl, AudioType.WAV);
             }
             else if (AssetType == typeof(Texture2D))
             {
-                m_Request = UnityWebRequestTexture.GetTexture(Url);
+                m_Request = UnityWebRequestTexture.GetTexture(AssetUrl);
             }
             else
             {
-                m_Request = new UnityWebRequest(Url);
+                m_Request = new UnityWebRequest(AssetUrl);
                 m_Request.downloadHandler = new DownloadHandlerBuffer();
             }
 
             m_Request.SendWebRequest();
-            m_LoadState = ELoadState.LoadAsset;
+            LoadState = ELoadState.LoadAsset;
         }
 
         internal override void Unload()
@@ -649,11 +645,11 @@ namespace Saro.XAsset
         internal override void Load()
         {
             //asset = Versions.LoadAssetBundleFromFile(url);
-            Asset = AssetBundle.LoadFromFile(Url);
+            Asset = AssetBundle.LoadFromFile(AssetUrl);
             //Asset = XAsset.Get().LoadAssetBundleFromFile(Url);
 
             if (AssetBundle == null)
-                Error = Url + " LoadFromFile failed.";
+                Error = AssetUrl + " LoadFromFile failed.";
         }
 
         internal override void Unload()
@@ -682,7 +678,6 @@ namespace Saro.XAsset
                 }
                 return base.AssetBundle;
             }
-
             internal set
             {
                 base.AssetBundle = value;
@@ -693,21 +688,21 @@ namespace Saro.XAsset
         {
             get
             {
-                if (m_LoadState == ELoadState.Init)
+                if (LoadState == ELoadState.Init)
                     return false;
 
-                if (m_LoadState == ELoadState.Loaded)
+                if (LoadState == ELoadState.Loaded)
                     return true;
 
-                if (m_LoadState == ELoadState.LoadAssetBundle && m_Request.isDone)
+                if (LoadState == ELoadState.LoadAssetBundle && m_Request.isDone)
                 {
                     Asset = m_Request.assetBundle;
-                    if (m_Request.assetBundle == null)
+                    if (Asset == null)
                     {
-                        Error = string.Format("unable to load assetBundle:{0}", Url);
+                        Error = string.Format("unable to load assetBundle:{0}", AssetUrl);
                     }
 
-                    m_LoadState = ELoadState.Loaded;
+                    LoadState = ELoadState.Loaded;
                 }
 
                 return m_Request == null || m_Request.isDone;
@@ -722,22 +717,22 @@ namespace Saro.XAsset
         internal override void Load()
         {
             //_request = Versions.LoadAssetBundleFromFileAsync(url);
-            m_Request = AssetBundle.LoadFromFileAsync(Url);
+            m_Request = AssetBundle.LoadFromFileAsync(AssetUrl);
             //m_Request = XAsset.Get().LoadAssetBundleFromFileAsync(Url);
 
             if (m_Request == null)
             {
-                Error = Url + " LoadFromFile failed.";
+                Error = AssetUrl + " LoadFromFile failed.";
                 return;
             }
 
-            m_LoadState = ELoadState.LoadAssetBundle;
+            LoadState = ELoadState.LoadAssetBundle;
         }
 
         internal override void Unload()
         {
             m_Request = null;
-            m_LoadState = ELoadState.Unload;
+            LoadState = ELoadState.Unload;
             base.Unload();
         }
     }
@@ -755,16 +750,16 @@ namespace Saro.XAsset
         {
             get
             {
-                if (m_LoadState == ELoadState.Init)
+                if (LoadState == ELoadState.Init)
                     return false;
 
-                if (m_Request == null || m_LoadState == ELoadState.Loaded)
+                if (m_Request == null || LoadState == ELoadState.Loaded)
                     return true;
 
                 if (m_Request.isDone)
                 {
                     AssetBundle = DownloadHandlerAssetBundle.GetContent(m_Request);
-                    m_LoadState = ELoadState.Loaded;
+                    LoadState = ELoadState.Loaded;
                 }
 
                 return m_Request.isDone;
@@ -778,9 +773,9 @@ namespace Saro.XAsset
 
         internal override void Load()
         {
-            m_Request = UnityWebRequestAssetBundle.GetAssetBundle(Url);
+            m_Request = UnityWebRequestAssetBundle.GetAssetBundle(AssetUrl);
             m_Request.SendWebRequest();
-            m_LoadState = ELoadState.LoadAssetBundle;
+            LoadState = ELoadState.LoadAssetBundle;
         }
 
         internal override void Unload()
@@ -791,7 +786,7 @@ namespace Saro.XAsset
                 m_Request = null;
             }
 
-            m_LoadState = ELoadState.Unload;
+            LoadState = ELoadState.Unload;
             base.Unload();
         }
     }

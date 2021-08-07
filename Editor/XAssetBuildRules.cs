@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
@@ -35,6 +36,11 @@ namespace Saro.XAsset.Build
         /// bundle名称
         /// </summary>
         public string bundle;
+
+        /// <summary>
+        /// 变体(暂未实现)
+        /// </summary>
+        public string variant;
 
         /// <summary>
         /// 资源路径合集
@@ -139,7 +145,6 @@ namespace Saro.XAsset.Build
 
         public AssetBundleBuild[] GetAssetBundleBuilds()
         {
-            // new
             var builds = new AssetBundleBuild[ruleBundles.Length];
             for (int i = 0; i < ruleBundles.Length; i++)
             {
@@ -147,24 +152,15 @@ namespace Saro.XAsset.Build
                 builds[i] = new AssetBundleBuild
                 {
                     assetNames = ruleBundle.assets,
-                    assetBundleName = ruleBundle.bundle
+                    assetBundleName = ruleBundle.bundle,
+                    assetBundleVariant = ruleBundle.variant,
+
+                    // if use short path
+                    //addressableNames = ruleBundle.assets.Select(Path.GetFileNameWithoutExtension).ToArray()
                 };
             }
 
             return builds;
-
-            // old
-            //var builds = new List<AssetBundleBuild>();
-            //foreach (var bundle in ruleBundles)
-            //{
-            //    builds.Add(new AssetBundleBuild
-            //    {
-            //        assetNames = bundle.assets,
-            //        assetBundleName = bundle.name
-            //    });
-            //}
-
-            //return builds.ToArray();
         }
 
         #endregion
@@ -251,6 +247,7 @@ namespace Saro.XAsset.Build
                 ruleBundles[i] = new RuleBundle
                 {
                     bundle = item.Key,
+                    //variant = "",
                     assets = item.Value.ToArray()
                 };
                 i++;
@@ -334,7 +331,6 @@ namespace Saro.XAsset.Build
                 ApplyRule(rule);
             }
 
-            // new
             var array = new RuleAsset[m_Asset2Bundles.Count];
             int index = 0;
             foreach (var item in m_Asset2Bundles)
@@ -348,17 +344,6 @@ namespace Saro.XAsset.Build
 
             Array.Sort(array, (a, b) => string.Compare(a.asset, b.asset, StringComparison.Ordinal));
             ruleAssets = array;
-
-            // old
-            //var list = new List<RuleAsset>();
-            //foreach (var item in m_Asset2Bundles)
-            //    list.Add(new RuleAsset
-            //    {
-            //        path = item.Key,
-            //        bundle = item.Value
-            //    });
-            //list.Sort((a, b) => string.Compare(a.path, b.path, StringComparison.Ordinal));
-            //ruleAssets = list.ToArray();
         }
 
         private void OptimizeAsset(string asset)
