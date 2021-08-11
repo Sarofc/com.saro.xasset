@@ -35,17 +35,17 @@ namespace Saro.XAsset
         internal static Func<string, Type, UnityEngine.Object> s_EditorLoader = null;
 
         [System.Diagnostics.Conditional("DEBUG_XASSET")]
-        internal void INFO(string msg)
+        internal static void INFO(string msg)
         {
             Log.INFO("XAsset", msg);
         }
 
-        internal void WARN(string msg)
+        internal static void WARN(string msg)
         {
             Log.WARN("XAsset", msg);
         }
 
-        internal void ERROR(string msg)
+        internal static void ERROR(string msg)
         {
             Log.ERROR("XAsset", msg);
         }

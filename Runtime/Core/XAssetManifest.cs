@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Saro.XAsset
@@ -6,18 +7,43 @@ namespace Saro.XAsset
     [Serializable]
     public struct AssetRef
     {
+        /// <summary>
+        /// 资源名
+        /// </summary>
         public string name;
+
+        /// <summary>
+        /// 资源所在包索引，<see cref="XAssetManifest.bundles"/>
+        /// </summary>
         public int bundle;
+
+        /// <summary>
+        /// 资源所在路径索引，<see cref="XAssetManifest.dirs"/>
+        /// </summary>
         public int dir;
     }
 
     [Serializable]
     public struct BundleRef
     {
+        /// <summary>
+        /// 包名
+        /// </summary>
         public string name;
-        public int id;
+
+        /// <summary>
+        /// 依赖包索引，<see cref="XAssetManifest.bundles"/>
+        /// </summary>
         public int[] deps;
+
+        /// <summary>
+        /// 包大小
+        /// </summary>
         public long len;
+
+        /// <summary>
+        /// 包流哈希
+        /// </summary>
         public string hash;
     }
 

@@ -199,7 +199,7 @@ namespace Saro.XAsset
             {
                 //var manifest = m_Request.AssetBundle.LoadAsset<XAssetManifest>(m_AssetName);
                 var manifest = m_Request.AssetBundle.LoadAsset<XAssetManifest>(AssetUrl);
-
+                
                 //Debug.LogError($"print ab \"{m_Request.AssetBundle.name}\" \n{String.Join("\n", m_Request.AssetBundle.GetAllAssetNames())}");
 
                 if (manifest == null)

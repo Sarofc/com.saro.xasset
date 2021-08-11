@@ -9,6 +9,7 @@ using System.Linq;
 
 
 #if USE_SBP
+using UnityEngine.Build.Pipeline;
 using UnityEditor.Build.Pipeline;
 #endif
 
@@ -32,15 +33,35 @@ namespace Saro.XAsset.Build
             var allAssetBundleNames = AssetDatabase.GetAllAssetBundleNames();
             for (var i = 0; i < allAssetBundleNames.Length; i++)
             {
-                var text = allAssetBundleNames[i];
+                var assetBundleName = allAssetBundleNames[i];
                 if (EditorUtility.DisplayCancelableProgressBar(
-                                    string.Format("Clear AssetBundles {0}/{1}", i, allAssetBundleNames.Length), text,
+                                    string.Format("Clear AssetBundles {0}/{1}", i, allAssetBundleNames.Length), assetBundleName,
                                     i * 1f / allAssetBundleNames.Length))
                     break;
 
-                AssetDatabase.RemoveAssetBundleName(text, true);
+                AssetDatabase.RemoveAssetBundleName(assetBundleName, true);
             }
             EditorUtility.ClearProgressBar();
+        }
+
+        public static void MarkAssetBundleNames()
+        {
+            ClearAssetBundleNames();
+
+            var buildRules = GetXAssetBuildRules();
+            for (int i = 0; i < buildRules.ruleBundles.Length; i++)
+            {
+                var bundle = buildRules.ruleBundles[i];
+                for (int j = 0; j < bundle.assets.Length; j++)
+                {
+                    var asset = bundle.assets[j];
+                    var importer = AssetImporter.GetAtPath(asset);
+                    importer.assetBundleName = bundle.bundle;
+                    importer.assetBundleVariant = bundle.variant;
+                }
+            }
+
+            AssetDatabase.RemoveUnusedAssetBundleNames();
         }
 
         internal static void ApplyBuildRules()
@@ -136,6 +157,7 @@ namespace Saro.XAsset.Build
             return scenes.ToArray();
         }
 
+        [System.Obsolete("Legacy Build, use SBP now", true)]
         private static string GetAssetBundleManifestFilePath()
         {
             var relativeAssetBundlesOutputPathForPlatform = Path.Combine("Asset", GetPlatformName());
@@ -212,6 +234,7 @@ namespace Saro.XAsset.Build
 #endif
         }
 
+        [System.Obsolete("use sbp!")]
         private static void LegacyBuildAssetBundles()
         {
             var outputFolder = CreateAssetBundleDirectory();
@@ -250,7 +273,7 @@ namespace Saro.XAsset.Build
                         bundleRefs.Add(new BundleRef
                         {
                             name = bundle,
-                            id = index,
+                            //id = index,
                             deps = Array.ConvertAll(deps, input => bundle2Ids[input]),
                             len = stream.Length,
                             hash = assetBundleManifest.GetAssetBundleHash(bundle).ToString(),
@@ -277,7 +300,12 @@ namespace Saro.XAsset.Build
                 }
                 try
                 {
-                    var asset = new AssetRef { bundle = bundle2Ids[item.bundle], dir = index, name = Path.GetFileName(path) };
+                    var asset = new AssetRef
+                    {
+                        bundle = bundle2Ids[item.bundle],
+                        dir = index,
+                        name = Path.GetFileName(path),
+                    };
                     assets.Add(asset);
                 }
                 catch (Exception e)
@@ -331,8 +359,15 @@ namespace Saro.XAsset.Build
                 return;
             }
 
+
+            //// sbpmanifest，运行时暂时用不到，测试用
+            //var sbpManifest = ScriptableObject.CreateInstance<CompatibilityAssetBundleManifest>();
+            //sbpManifest.SetResults(result.BundleInfos);
+            //File.WriteAllText(outputFolder, JsonUtility.ToJson(sbpManifest));
+            //XAssetComponent.ERROR(JsonUtility.ToJson(sbpManifest));
+
+
             var assetBundleManifest = result.BundleInfos;
-           
             var xassetManifest = GetXAssetManifest();
             var dirs = new List<string>();
             var assets = new List<AssetRef>();
@@ -358,7 +393,6 @@ namespace Saro.XAsset.Build
                         bundleRefs.Add(new BundleRef
                         {
                             name = bundle,
-                            id = index,
                             deps = Array.ConvertAll(deps, input => bundle2Ids[input]),
                             len = stream.Length,
                             hash = assetBundleManifest[bundle].Hash.ToString(),
@@ -385,7 +419,12 @@ namespace Saro.XAsset.Build
                 }
                 try
                 {
-                    var asset = new AssetRef { bundle = bundle2Ids[item.bundle], dir = index, name = Path.GetFileName(path) };
+                    var asset = new AssetRef
+                    {
+                        bundle = bundle2Ids[item.bundle],
+                        dir = index,
+                        name = Path.GetFileName(path),
+                    };
                     assets.Add(asset);
                 }
                 catch (Exception e)
@@ -404,9 +443,11 @@ namespace Saro.XAsset.Build
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            var manifestBundleName = "xassetmanifest.unity3d";
-            assetBundleBuilds = new[] {
-                new AssetBundleBuild {
+            var manifestBundleName = "xassetmanifest.unity";
+            assetBundleBuilds = new[]
+            {
+                new AssetBundleBuild
+                {
                     assetNames = new[] { AssetDatabase.GetAssetPath (xassetManifest), },
                     assetBundleName = manifestBundleName
                 }

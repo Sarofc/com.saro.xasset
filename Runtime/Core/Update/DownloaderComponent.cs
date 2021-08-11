@@ -177,26 +177,26 @@ namespace Saro.XAsset.Update
         {
             if (downloadSpeed >= 1024 * 1024)
             {
-                return string.Format("{0:f2}MB/s", downloadSpeed * k_BYTES_2_MB);
+                return string.Format("{0:f2} MB/s", downloadSpeed * k_BYTES_2_MB);
             }
             if (downloadSpeed >= 1024)
             {
-                return string.Format("{0:f2}KB/s", downloadSpeed / 1024);
+                return string.Format("{0:f2} KB/s", downloadSpeed / 1024);
             }
-            return string.Format("{0:f2}B/s", downloadSpeed);
+            return string.Format("{0:f2} B/s", downloadSpeed);
         }
 
         public static string GetDisplaySize(long downloadSize)
         {
             if (downloadSize >= 1024 * 1024)
             {
-                return string.Format("{0:f2}MB", downloadSize * k_BYTES_2_MB);
+                return string.Format("{0:f2} MB", downloadSize * k_BYTES_2_MB);
             }
             if (downloadSize >= 1024)
             {
-                return string.Format("{0:f2}KB", downloadSize / 1024);
+                return string.Format("{0:f2} KB", downloadSize / 1024);
             }
-            return string.Format("{0:f2}B", downloadSize);
+            return string.Format("{0:f2} B", downloadSize);
         }
 
 

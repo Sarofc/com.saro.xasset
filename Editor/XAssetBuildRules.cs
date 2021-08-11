@@ -65,6 +65,9 @@ namespace Saro.XAsset.Build
         /// <returns>根据搜索规则,获取所有资源的路径</returns>
         public string[] GetAssets()
         {
+            // BUG
+            // 没有处理 nameBy，单文件被忽略了
+
             var patterns = searchPattern.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             if (!Directory.Exists(searchPath))
             {
@@ -95,7 +98,7 @@ namespace Saro.XAsset.Build
     {
         private readonly Dictionary<string, string> m_Asset2Bundles = new Dictionary<string, string>(1024, StringComparer.Ordinal);
         private readonly Dictionary<string, string[]> m_Conflicted = new Dictionary<string, string[]>(1024, StringComparer.Ordinal);
-        private readonly List<string> m_DuplicatedAssets = new List<string>(128);
+        private readonly HashSet<string> m_NeedOptimizeAssets = new HashSet<string>();
         private readonly Dictionary<string, HashSet<string>> m_Tracker = new Dictionary<string, HashSet<string>>(1024, StringComparer.Ordinal);
         [Header("Patterns")]
         public string searchPatternAsset = "*.asset";
@@ -113,7 +116,7 @@ namespace Saro.XAsset.Build
         [Header("Builds")]
         public string version = "0.0.0";
 
-        [Tooltip("build-in场景")]
+        [Tooltip("built-in场景")]
         public SceneAsset[] scenesInBuild = new SceneAsset[0];
 
         public BuildRule[] rules = new BuildRule[0];
@@ -169,7 +172,7 @@ namespace Saro.XAsset.Build
 
         internal static bool ValidateAsset(string asset)
         {
-            if (!asset.StartsWith("Assets/")) return false;
+            if (!(asset.StartsWith("Assets/") || asset.StartsWith("Packages/"))) return false;
 
             var ext = Path.GetExtension(asset).ToLower();
             return ext != ".dll" && ext != ".cs" && ext != ".meta" && ext != ".js" && ext != ".boo";
@@ -180,7 +183,12 @@ namespace Saro.XAsset.Build
             return asset.EndsWith(".unity");
         }
 
-        private string RuledAssetBundleName(string name)
+        internal static bool IsShaderAsset(string asset)
+        {
+            return asset.EndsWith(".shader");
+        }
+
+        internal string RuledAssetBundleName(string name)
         {
             if (nameBundleByHash)
             {
@@ -205,7 +213,7 @@ namespace Saro.XAsset.Build
                 m_Asset2Bundles.TryGetValue(asset, out string bundleName);
                 if (string.IsNullOrEmpty(bundleName))
                 {
-                    m_DuplicatedAssets.Add(asset);
+                    m_NeedOptimizeAssets.Add(asset);
                 }
             }
         }
@@ -232,7 +240,7 @@ namespace Saro.XAsset.Build
         private void Clear()
         {
             m_Tracker.Clear();
-            m_DuplicatedAssets.Clear();
+            m_NeedOptimizeAssets.Clear();
             m_Conflicted.Clear();
             m_Asset2Bundles.Clear();
         }
@@ -271,19 +279,20 @@ namespace Saro.XAsset.Build
                 foreach (string asset in list)
                 {
                     if (!IsSceneAsset(asset))
-                        m_DuplicatedAssets.Add(asset);
+                        m_NeedOptimizeAssets.Add(asset);
                 }
                 i++;
             }
 
-            for (i = 0, max = m_DuplicatedAssets.Count; i < max; i++)
+            i = 0;
+            max = m_NeedOptimizeAssets.Count;
+            foreach (var item in m_NeedOptimizeAssets)
             {
-                var item = m_DuplicatedAssets[i];
-
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("优化冗余{0}/{1}", i, max), item, i / (float)max))
                     break;
 
                 OptimizeAsset(item);
+                i++;
             }
         }
 
@@ -301,7 +310,27 @@ namespace Saro.XAsset.Build
                 var assetPaths = bundle2Assets[bundle];
 
                 var pathNames = assetPaths.ToArray();
-                if (assetPaths.Exists(IsSceneAsset) && !assetPaths.TrueForAll(IsSceneAsset))
+
+                bool hasScene = false;
+                bool allScene = true;
+                foreach (string asset in assetPaths)
+                {
+                    if (IsSceneAsset(asset))
+                    {
+                        hasScene = true;
+                    }
+                    else
+                    {
+                        allScene = false;
+
+                        if (IsShaderAsset(asset))
+                            m_NeedOptimizeAssets.Add(asset);
+                    }
+                }
+
+                //if (assetPaths.Exists(IsSceneAsset) && !assetPaths.TrueForAll(IsSceneAsset))
+                bool sceneBundleConflicted = hasScene && !allScene;
+                if (sceneBundleConflicted)
                     m_Conflicted.Add(bundle, pathNames);
 
                 // 获取所有被引用的资源
@@ -312,7 +341,12 @@ namespace Saro.XAsset.Build
                     foreach (var asset in dependencies)
                     {
                         if (ValidateAsset(asset))
+                        {
                             Track(asset, bundle);
+
+                            if (IsShaderAsset(asset))
+                                m_NeedOptimizeAssets.Add(asset);
+                        }
                     }
                 }
                 i++;
@@ -348,10 +382,12 @@ namespace Saro.XAsset.Build
 
         private void OptimizeAsset(string asset)
         {
-            if (asset.EndsWith(".shader"))
+            if (IsShaderAsset(asset))
                 m_Asset2Bundles[asset] = RuledAssetBundleName("shaders");
             else
                 m_Asset2Bundles[asset] = RuledAssetBundleName(asset);
+
+            //XAssetComponent.ERROR($"OptimizeAsset: {asset}");
         }
 
         private void ApplyRule(BuildRule rule)
