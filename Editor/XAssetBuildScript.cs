@@ -23,7 +23,7 @@ namespace Saro.XAsset.Build
 {
     public static class XAssetBuildScript
     {
-        private const string k_XAssetBuildRulesPath = "Assets/XAsset/XAssetBuildRules.asset";
+        private const string k_XAssetBuildGroupsPath = "Assets/XAsset/XAssetBuildGroups.asset";
         private const string k_XAssetSettingsPath = "Assets/XAsset/XAssetSettings.asset";
         public static string s_DLCFolder = "ExtraResources/DLC/" + GetPlatformName();
         public static string s_DatFolder = s_DLCFolder + "/Dat";
@@ -48,25 +48,24 @@ namespace Saro.XAsset.Build
         {
             ClearAssetBundleNames();
 
-            var buildRules = GetXAssetBuildRules();
-            for (int i = 0; i < buildRules.ruleBundles.Length; i++)
+            var buildGroups = GetXAssetBuildGroups();
+            for (int i = 0; i < buildGroups.ruleBundles.Length; i++)
             {
-                var bundle = buildRules.ruleBundles[i];
+                var bundle = buildGroups.ruleBundles[i];
                 for (int j = 0; j < bundle.assets.Length; j++)
                 {
                     var asset = bundle.assets[j];
                     var importer = AssetImporter.GetAtPath(asset);
                     importer.assetBundleName = bundle.bundle;
-                    importer.assetBundleVariant = bundle.variant;
                 }
             }
 
             AssetDatabase.RemoveUnusedAssetBundleNames();
         }
 
-        internal static void ApplyBuildRules()
+        internal static void ApplyBuildGroups()
         {
-            var rules = GetXAssetBuildRules();
+            var rules = GetXAssetBuildGroups();
             rules.Apply();
         }
 
@@ -143,7 +142,7 @@ namespace Saro.XAsset.Build
 
         private static string[] GetBuiltScenesFromXAssetSettings()
         {
-            var builtInScenes = GetXAssetBuildRules().scenesInBuild;
+            var builtInScenes = GetXAssetBuildGroups().scenesInBuild;
             var scenes = new HashSet<string>();
             foreach (SceneAsset item in builtInScenes)
             {
@@ -241,8 +240,8 @@ namespace Saro.XAsset.Build
             var options = GetXAssetSettings().buildAssetBundleOptions;
 
             var buildTarget = EditorUserBuildSettings.activeBuildTarget;
-            var xassetBuildRules = GetXAssetBuildRules();
-            var assetBundleBuilds = xassetBuildRules.GetAssetBundleBuilds();
+            var xassetBuildGroups = GetXAssetBuildGroups();
+            var assetBundleBuilds = xassetBuildGroups.GetAssetBundleBuilds();
             var assetBundleManifest = BuildPipeline.BuildAssetBundles(outputFolder, assetBundleBuilds, options, buildTarget);
             if (assetBundleManifest == null)
             {
@@ -286,9 +285,9 @@ namespace Saro.XAsset.Build
                 }
             }
 
-            for (var i = 0; i < xassetBuildRules.ruleAssets.Length; i++)
+            for (var i = 0; i < xassetBuildGroups.ruleAssets.Length; i++)
             {
-                var item = xassetBuildRules.ruleAssets[i];
+                var item = xassetBuildGroups.ruleAssets[i];
                 var path = item.asset;
                 var dir = Path.GetDirectoryName(path).Replace("\\", "/");
 
@@ -335,7 +334,7 @@ namespace Saro.XAsset.Build
             BuildPipeline.BuildAssetBundles(outputFolder, assetBundleBuilds, options, buildTarget);
             ArrayUtility.Add(ref bundles, manifestBundleName);
 
-            var version = GetXAssetBuildRules().AddVersion();
+            var version = GetXAssetBuildGroups().AddVersion();
 
             // TODO 先不打vfs
             //Update.VersionList.BuildVersionList(outputFolder, s_DatFolder, bundles, version);
@@ -348,10 +347,10 @@ namespace Saro.XAsset.Build
             var options = GetXAssetSettings().buildAssetBundleOptions;
 
             var buildTarget = EditorUserBuildSettings.activeBuildTarget;
-            var xassetBuildRules = GetXAssetBuildRules();
-            var assetBundleBuilds = xassetBuildRules.GetAssetBundleBuilds();
+            var xassetBuildGroups = GetXAssetBuildGroups();
+            var assetBundleBuilds = xassetBuildGroups.GetAssetBundleBuilds();
 
-            var retCode = SBPBuildAssetBundle.BuildAssetBundles(outputFolder, assetBundleBuilds, true, buildTarget, out var result);
+            var retCode = SBPBuildAssetBundle.BuildAssetBundles(outputFolder, assetBundleBuilds, options, buildTarget, out var result);
 
             if (retCode != ReturnCode.Success)
             {
@@ -405,9 +404,9 @@ namespace Saro.XAsset.Build
                 }
             }
 
-            for (var i = 0; i < xassetBuildRules.ruleAssets.Length; i++)
+            for (var i = 0; i < xassetBuildGroups.ruleAssets.Length; i++)
             {
-                var item = xassetBuildRules.ruleAssets[i];
+                var item = xassetBuildGroups.ruleAssets[i];
                 var path = item.asset;
                 var dir = Path.GetDirectoryName(path).Replace("\\", "/");
 
@@ -453,9 +452,9 @@ namespace Saro.XAsset.Build
                 }
             };
 
-            SBPBuildAssetBundle.BuildAssetBundles(outputFolder, assetBundleBuilds, true, buildTarget, out var results);
+            SBPBuildAssetBundle.BuildAssetBundles(outputFolder, assetBundleBuilds, options, buildTarget, out var results);
 
-            var version = GetXAssetBuildRules().AddVersion();
+            var version = GetXAssetBuildGroups().AddVersion();
 
             // TODO 打vfs
             //ArrayUtility.Add(ref bundles, manifestBundleName);
@@ -476,7 +475,7 @@ namespace Saro.XAsset.Build
             else
             {
                 time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
-                name = PlayerSettings.productName + "-v" + PlayerSettings.bundleVersion + "." + GetXAssetBuildRules().version;
+                name = PlayerSettings.productName + "-v" + PlayerSettings.bundleVersion + "." + GetXAssetBuildGroups().version;
             }
             switch (target)
             {
@@ -524,9 +523,9 @@ namespace Saro.XAsset.Build
             return GetAsset<XAssetManifest>(XAssetComponent.k_XAssetManifestAsset);
         }
 
-        internal static XAssetBuildRules GetXAssetBuildRules()
+        internal static XAssetBuildGroups GetXAssetBuildGroups()
         {
-            return GetAsset<XAssetBuildRules>(k_XAssetBuildRulesPath);
+            return GetAsset<XAssetBuildGroups>(k_XAssetBuildGroupsPath);
         }
 
         internal static XAssetSettings GetXAssetSettings()

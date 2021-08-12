@@ -48,7 +48,7 @@ namespace Saro.XAsset.Build
                 List<Object> objects = new List<Object>();
                 foreach (string assetPath in assetPaths)
                 {
-                    if (XAssetBuildRules.IsSceneAsset(assetPath))
+                    if (XAssetBuildGroups.IsSceneAsset(assetPath))
                         objects.Add(AssetDatabase.LoadAssetAtPath(assetPath, typeof(SceneAsset)));
                     else
                         objects.AddRange(AssetDatabase.LoadAllAssetsAtPath(assetPath));

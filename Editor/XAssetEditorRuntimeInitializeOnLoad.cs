@@ -23,7 +23,7 @@ namespace Saro.XAsset.Build
         void ProgressEditorSceneSettings()
         {
             var assets = new List<string>();
-            var rules = XAssetBuildScript.GetXAssetBuildRules();
+            var rules = XAssetBuildScript.GetXAssetBuildGroups();
             foreach (var asset in rules.scenesInBuild)
             {
                 var path = AssetDatabase.GetAssetPath(asset);
@@ -33,7 +33,7 @@ namespace Saro.XAsset.Build
                 }
                 assets.Add(path);
             }
-            foreach (var rule in rules.rules)
+            foreach (var rule in rules.groups)
             {
                 if (rule.searchPattern.Contains("*.unity"))
                 {

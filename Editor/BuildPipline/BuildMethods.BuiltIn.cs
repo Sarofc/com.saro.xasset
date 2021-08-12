@@ -24,7 +24,7 @@ namespace Saro.XAsset.Build
         {
             var watch = new System.Diagnostics.Stopwatch();
             watch.Start();
-            XAssetBuildScript.ApplyBuildRules();
+            XAssetBuildScript.ApplyBuildGroups();
             watch.Stop();
             Debug.Log("[XAsset] ApplyBuildRules " + watch.ElapsedMilliseconds + " ms.");
         }

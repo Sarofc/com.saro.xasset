@@ -50,11 +50,25 @@ namespace Saro.XAsset
     public class XAssetManifest : ScriptableObject
     {
         /// <summary>
+        /// 已有变体
         /// TODO 暂时未支持
         /// </summary>
         public string[] activeVariants = new string[0];
+
+        /// <summary>
+        /// 资源路径
+        /// </summary>
         public string[] dirs = new string[0];
+
+        /// <summary>
+        /// 资源
+        /// </summary>
         public AssetRef[] assets = new AssetRef[0];
+
+        /// <summary>
+        /// 包
+        /// </summary>
         public BundleRef[] bundles = new BundleRef[0];
+
     }
 }

@@ -217,7 +217,7 @@ namespace Saro.XAsset.Build
 
                 if (GUILayout.Button("XAssetRule.."))
                 {
-                    Selection.activeObject = XAssetBuildScript.GetXAssetBuildRules();
+                    Selection.activeObject = XAssetBuildScript.GetXAssetBuildGroups();
                 }
 
                 if (GUILayout.Button("Run HFS"))
@@ -280,7 +280,7 @@ namespace Saro.XAsset.Build
         {
             m_XAssetSettings = XAssetBuildScript.GetXAssetSettings();
             XAssetBuildScript.GetXAssetManifest();
-            XAssetBuildScript.GetXAssetBuildRules();
+            XAssetBuildScript.GetXAssetBuildGroups();
         }
 
         private void ExecuteAction(System.Action action)
