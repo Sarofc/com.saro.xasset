@@ -220,6 +220,11 @@ namespace Saro.XAsset.Build
                     Selection.activeObject = XAssetBuildScript.GetXAssetBuildGroups();
                 }
 
+                if (GUILayout.Button("Browser.."))
+                {
+                    AssetBundleBrowser.AssetBundleBrowserMain.ShowWindow();
+                }
+
                 if (GUILayout.Button("Run HFS"))
                 {
                     var absoluteHfsExe = System.IO.Path.GetFullPath("Packages/com.saro.xasset/Editor/HFS/hfs.exe");

@@ -36,7 +36,8 @@ namespace AssetBundleBrowser.AssetBundleDataSource
 
                     for (int count = 0; count < list.Count; count++)
                     {
-                        if (list[count].Name == "AssetDatabaseABDataSource")
+                        if(list[count].Name == nameof(XAssetABDataSource))
+                        //if (list[count].Name == "AssetDatabaseABDataSource")
                             properList[0] = list[count];
                         else if (list[count] != null)
                             properList.Add(list[count]);

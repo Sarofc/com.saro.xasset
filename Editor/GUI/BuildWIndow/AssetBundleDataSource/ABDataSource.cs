@@ -109,6 +109,8 @@ namespace AssetBundleBrowser.AssetBundleDataSource
         /// </summary>
         void Reload();
 
+        string GetRealAssetBundleFolderPath();
+
         /// <summary>
         /// Signals if this data source can have build target set by tool
         /// </summary>

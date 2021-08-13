@@ -40,10 +40,11 @@ namespace AssetBundleBrowser
         SearchField m_searchField;
 
         EditorWindow m_Parent = null;
+        private MultiColumnHeaderState m_BundleTreeMCHState;
 
         internal AssetBundleManageTab()
         {
-            m_HorizontalSplitterPercent = 0.4f;
+            m_HorizontalSplitterPercent = 0.45f;
             m_VerticalSplitterPercentRight = 0.7f;
             m_VerticalSplitterPercentLeft = 0.85f;
         }
@@ -110,28 +111,40 @@ namespace AssetBundleBrowser
 
             if(m_BundleTree == null)
             {
-                if (m_AssetListState == null)
-                    m_AssetListState = new TreeViewState();
+                {
+                    if (m_AssetListState == null)
+                        m_AssetListState = new TreeViewState();
 
-                var headerState = AssetListTree.CreateDefaultMultiColumnHeaderState();// multiColumnTreeViewRect.width);
-                if (MultiColumnHeaderState.CanOverwriteSerializedFields(m_AssetListMCHState, headerState))
-                    MultiColumnHeaderState.OverwriteSerializedFields(m_AssetListMCHState, headerState);
-                m_AssetListMCHState = headerState;
+                    var headerState = AssetListTree.CreateDefaultMultiColumnHeaderState();// multiColumnTreeViewRect.width);
+                    if (MultiColumnHeaderState.CanOverwriteSerializedFields(m_AssetListMCHState, headerState))
+                        MultiColumnHeaderState.OverwriteSerializedFields(m_AssetListMCHState, headerState);
+                    m_AssetListMCHState = headerState;
 
 
-                m_AssetList = new AssetListTree(m_AssetListState, m_AssetListMCHState, this);
-                m_AssetList.Reload();
-                m_MessageList = new MessageList();
+                    m_AssetList = new AssetListTree(m_AssetListState, m_AssetListMCHState, this);
+                    m_AssetList.Reload();
+                    m_MessageList = new MessageList();
+                }
 
-                if (m_BundleDetailState == null)
-                    m_BundleDetailState = new TreeViewState();
-                m_DetailsList = new BundleDetailList(m_BundleDetailState);
-                m_DetailsList.Reload();
+                {
+                    if (m_BundleDetailState == null)
+                        m_BundleDetailState = new TreeViewState();
+                    m_DetailsList = new BundleDetailList(m_BundleDetailState);
+                    m_DetailsList.Reload();
+                }
 
-                if (m_BundleTreeState == null)
-                    m_BundleTreeState = new TreeViewState();
-                m_BundleTree = new AssetBundleTree(m_BundleTreeState, this);
-                m_BundleTree.Refresh();
+                {
+                    if (m_BundleTreeState == null)
+                        m_BundleTreeState = new TreeViewState();
+
+                    var headerState = AssetBundleTree.CreateDefaultMultiColumnHeaderState();// multiColumnTreeViewRect.width);
+                    if (MultiColumnHeaderState.CanOverwriteSerializedFields(m_BundleTreeMCHState, headerState))
+                        MultiColumnHeaderState.OverwriteSerializedFields(m_BundleTreeMCHState, headerState);
+                    m_BundleTreeMCHState = headerState;
+
+                    m_BundleTree = new AssetBundleTree(m_BundleTreeState, m_BundleTreeMCHState, this);
+                    m_BundleTree.Refresh();
+                }
                 m_Parent.Repaint();
             }
             

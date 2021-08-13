@@ -26,7 +26,7 @@ namespace AssetBundleBrowser
         enum Mode
         {
             Browser,
-            Builder,
+            //Builder,
             Inspect,
         }
         [SerializeField]
@@ -38,8 +38,8 @@ namespace AssetBundleBrowser
         [SerializeField]
         internal AssetBundleManageTab m_ManageTab;
 
-        [SerializeField]
-        internal AssetBundleBuildTab m_BuildTab;
+        //[SerializeField]
+        //internal AssetBundleBuildTab m_BuildTab;
 
         [SerializeField]
         internal AssetBundleInspectTab m_InspectTab;
@@ -50,7 +50,7 @@ namespace AssetBundleBrowser
         const float k_MenubarPadding = 32;
 
         [MenuItem("Window/AssetBundle Browser", priority = 2050)]
-        static void ShowWindow()
+        public static void ShowWindow()
         {
             s_instance = null;
             instance.titleContent = new GUIContent("AssetBundles");
@@ -58,12 +58,12 @@ namespace AssetBundleBrowser
         }
 
         [SerializeField]
-        internal bool multiDataSource = false;
+        internal bool multiDataSource = true;
         List<AssetBundleDataSource.ABDataSource> m_DataSourceList = null;
         public virtual void AddItemsToMenu(GenericMenu menu)
         {
-            if(menu != null)
-               menu.AddItem(new GUIContent("Custom Sources"), multiDataSource, FlipDataSource);
+            if (menu != null)
+                menu.AddItem(new GUIContent("Custom Sources"), multiDataSource, FlipDataSource);
         }
         internal void FlipDataSource()
         {
@@ -74,12 +74,12 @@ namespace AssetBundleBrowser
         {
 
             Rect subPos = GetSubWindowArea();
-            if(m_ManageTab == null)
+            if (m_ManageTab == null)
                 m_ManageTab = new AssetBundleManageTab();
             m_ManageTab.OnEnable(subPos, this);
-            if(m_BuildTab == null)
-                m_BuildTab = new AssetBundleBuildTab();
-            m_BuildTab.OnEnable(this);
+            //if(m_BuildTab == null)
+            //    m_BuildTab = new AssetBundleBuildTab();
+            //m_BuildTab.OnEnable(this);
             if (m_InspectTab == null)
                 m_InspectTab = new AssetBundleInspectTab();
             m_InspectTab.OnEnable(subPos);
@@ -87,20 +87,20 @@ namespace AssetBundleBrowser
             m_RefreshTexture = EditorGUIUtility.FindTexture("Refresh");
 
             InitDataSources();
-        } 
+        }
         private void InitDataSources()
         {
             //determine if we are "multi source" or not...
-            multiDataSource = false;
+            //multiDataSource = false;
             m_DataSourceList = new List<AssetBundleDataSource.ABDataSource>();
             foreach (var info in AssetBundleDataSource.ABDataSourceProviderUtility.CustomABDataSourceTypes)
             {
                 m_DataSourceList.AddRange(info.GetMethod("CreateDataSources").Invoke(null, null) as List<AssetBundleDataSource.ABDataSource>);
             }
-             
+
             if (m_DataSourceList.Count > 1)
             {
-                multiDataSource = true;
+                //multiDataSource = true;
                 if (m_DataSourceIndex >= m_DataSourceList.Count)
                     m_DataSourceIndex = 0;
                 AssetBundleModel.Model.DataSource = m_DataSourceList[m_DataSourceIndex];
@@ -108,8 +108,8 @@ namespace AssetBundleBrowser
         }
         private void OnDisable()
         {
-            if (m_BuildTab != null)
-                m_BuildTab.OnDisable();
+            //if (m_BuildTab != null)
+            //    m_BuildTab.OnDisable();
             if (m_InspectTab != null)
                 m_InspectTab.OnDisable();
         }
@@ -134,8 +134,8 @@ namespace AssetBundleBrowser
         {
             switch (m_Mode)
             {
-                case Mode.Builder:
-                    break;
+                //case Mode.Builder:
+                //    break;
                 case Mode.Inspect:
                     break;
                 case Mode.Browser:
@@ -149,11 +149,11 @@ namespace AssetBundleBrowser
         {
             ModeToggle();
 
-            switch(m_Mode)
+            switch (m_Mode)
             {
-                case Mode.Builder:
-                    m_BuildTab.OnGUI();
-                    break;
+                //case Mode.Builder:
+                //    m_BuildTab.OnGUI();
+                //    break;
                 case Mode.Inspect:
                     m_InspectTab.OnGUI(GetSubWindowArea());
                     break;
@@ -169,16 +169,16 @@ namespace AssetBundleBrowser
             GUILayout.BeginHorizontal();
             GUILayout.Space(k_ToolbarPadding);
             bool clicked = false;
-            switch(m_Mode)
+            switch (m_Mode)
             {
                 case Mode.Browser:
                     clicked = GUILayout.Button(m_RefreshTexture);
                     if (clicked)
                         m_ManageTab.ForceReloadData();
                     break;
-                case Mode.Builder:
-                    GUILayout.Space(m_RefreshTexture.width + k_ToolbarPadding);
-                    break;
+                //case Mode.Builder:
+                //    GUILayout.Space(m_RefreshTexture.width + k_ToolbarPadding);
+                //    break;
                 case Mode.Inspect:
                     clicked = GUILayout.Button(m_RefreshTexture);
                     if (clicked)
@@ -188,11 +188,12 @@ namespace AssetBundleBrowser
 
             float toolbarWidth = position.width - k_ToolbarPadding * 4 - m_RefreshTexture.width;
             //string[] labels = new string[2] { "Configure", "Build"};
-            string[] labels = new string[3] { "Configure", "Build", "Inspect" };
-            m_Mode = (Mode)GUILayout.Toolbar((int)m_Mode, labels, "LargeButton", GUILayout.Width(toolbarWidth) );
+            //string[] labels = new string[3] { "Configure", "Build", "Inspect" };
+            string[] labels = new string[2] { "Browser", "Inspect" };
+            m_Mode = (Mode)GUILayout.Toolbar((int)m_Mode, labels, "LargeButton", GUILayout.Width(toolbarWidth));
             GUILayout.FlexibleSpace();
             GUILayout.EndHorizontal();
-            if(multiDataSource)
+            if (multiDataSource)
             {
                 //GUILayout.BeginArea(r);
                 GUILayout.BeginHorizontal();
@@ -202,7 +203,7 @@ namespace AssetBundleBrowser
                     GUILayout.Label("Bundle Data Source:");
                     GUILayout.FlexibleSpace();
                     var c = new GUIContent(string.Format("{0} ({1})", AssetBundleModel.Model.DataSource.Name, AssetBundleModel.Model.DataSource.ProviderName), "Select Asset Bundle Set");
-                    if (GUILayout.Button(c , EditorStyles.toolbarPopup) )
+                    if (GUILayout.Button(c, EditorStyles.toolbarPopup))
                     {
                         GenericMenu menu = new GenericMenu();
 
@@ -214,7 +215,7 @@ namespace AssetBundleBrowser
 
                             if (index > 0)
                                 menu.AddSeparator("");
-                             
+
                             var counter = index;
                             menu.AddItem(new GUIContent(string.Format("{0} ({1})", ds.Name, ds.ProviderName)), false,
                                 () =>

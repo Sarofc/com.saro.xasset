@@ -397,34 +397,36 @@ namespace Saro.XAsset.Build
         {
             var assets = group.GetAssets();
 
-            // 根据类型命名
-            switch (group.nameBy)
+            var startIndex = group.searchPath.Length;
+            foreach (var asset in assets)
             {
-                case ENameBy.Explicit:
-                    {
-                        foreach (var asset in assets)
+                if (IsShaderAsset(asset))
+                {
+                    m_Asset2Bundles[asset] = RuledAssetBundleName("shaders");
+                    continue;
+                }
+
+                switch (group.nameBy)
+                {
+                    case ENameBy.Explicit:
+                        {
                             m_Asset2Bundles[asset] = RuledAssetBundleName(group.assetBundleName);
 
-                        break;
-                    }
-                case ENameBy.Path:
-                    {
-                        foreach (var asset in assets)
+                            break;
+                        }
+                    case ENameBy.Path:
+                        {
                             m_Asset2Bundles[asset] = RuledAssetBundleName(asset);
 
-                        break;
-                    }
-                case ENameBy.Directory:
-                    {
-                        foreach (var asset in assets)
+                            break;
+                        }
+                    case ENameBy.Directory:
+                        {
                             m_Asset2Bundles[asset] = RuledAssetBundleName(Path.GetDirectoryName(asset));
 
-                        break;
-                    }
-                case ENameBy.TopDirectory:
-                    {
-                        var startIndex = group.searchPath.Length;
-                        foreach (var asset in assets)
+                            break;
+                        }
+                    case ENameBy.TopDirectory:
                         {
                             var dir = Path.GetDirectoryName(asset);
                             if (!string.IsNullOrEmpty(dir))
@@ -435,12 +437,13 @@ namespace Saro.XAsset.Build
                                 }
 
                             m_Asset2Bundles[asset] = RuledAssetBundleName(dir);
-                        }
 
-                        break;
-                    }
-                default:
-                    throw new ArgumentOutOfRangeException();
+                            break;
+                        }
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+
             }
         }
 

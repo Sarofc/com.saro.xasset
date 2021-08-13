@@ -4,6 +4,7 @@ using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.IMGUI.Controls;
+using System.IO;
 
 namespace AssetBundleBrowser.AssetBundleModel
 {
@@ -39,7 +40,9 @@ namespace AssetBundleBrowser.AssetBundleModel
     {
         private List<string> m_PathTokens;
         private string m_FullBundleName;
+        [System.Obsolete("SBP don't support assetbundle variants", false)]
         private string m_ShortName;
+        [System.Obsolete("SBP don't support assetbundle variants", false)]
         private string m_VariantName;
         private string m_FullNativeName;
 
@@ -76,10 +79,12 @@ namespace AssetBundleBrowser.AssetBundleModel
             get { return m_FullBundleName; }
             //set { SetName(value); }
         }
+        [System.Obsolete("SBP don't support assetbundle variants", false)]
         internal string shortName
         {
             get { return m_ShortName; }
         }
+        [System.Obsolete("SBP don't support assetbundle variants", false)]
         internal string variant
         {
             get { return m_VariantName; }
@@ -119,8 +124,13 @@ namespace AssetBundleBrowser.AssetBundleModel
             SetShortName(name.Substring(previousIndex));
             GenerateFullName();
         }
+
         private void SetShortName(string inputName)
         {
+            m_ShortName = inputName;
+            m_VariantName = string.Empty;
+            return;
+
             m_ShortName = inputName;
             int indexOfDot = m_ShortName.LastIndexOf('.');
             if (indexOfDot > -1)
@@ -132,6 +142,7 @@ namespace AssetBundleBrowser.AssetBundleModel
                 m_VariantName = string.Empty;
         }
 
+        [System.Obsolete("SBP don't support assetbundle variants", false)]
         internal void PartialNameChange(string newToken, int indexFromBack)
         {
             if (indexFromBack == 0)
@@ -167,6 +178,15 @@ namespace AssetBundleBrowser.AssetBundleModel
         internal BundleNameData m_Name;
         protected MessageSystem.MessageState m_BundleMessages = new MessageSystem.MessageState();
         protected MessageSystem.Message m_CachedHighMessage = null;
+        protected long m_TotalSize;
+        protected long m_BundleSize;
+
+        internal long totalSize => m_TotalSize;
+        /// <summary>
+        ///  real bundle size
+        /// </summary>
+        internal long bundleSize => m_BundleSize;
+
 
         internal BundleInfo(string name, BundleFolderInfo parent)
         {
@@ -252,6 +272,20 @@ namespace AssetBundleBrowser.AssetBundleModel
         abstract internal List<AssetInfo> GetDependencies();
 
         abstract internal bool DoesItemMatchSearch(string search);
+
+        internal string TotalSize()
+        {
+            if (m_TotalSize == 0)
+                return "--";
+            return EditorUtility.FormatBytes(m_TotalSize);
+        }
+
+        internal string BundleSize()
+        {
+            if (m_BundleSize == 0)
+                return "--";
+            return EditorUtility.FormatBytes(m_BundleSize);
+        }
     }
 
     internal class BundleDependencyInfo
@@ -278,7 +312,6 @@ namespace AssetBundleBrowser.AssetBundleModel
         protected int m_ConcreteCounter;
         protected int m_DependentCounter;
         protected bool m_IsSceneBundle;
-        protected long m_TotalSize;
 
         internal BundleDataInfo(string name, BundleFolderInfo parent) : base(name, parent)
         {
@@ -308,13 +341,6 @@ namespace AssetBundleBrowser.AssetBundleModel
             RefreshAssetList();
             base.HandleDelete(isRootOfDelete);
             Model.MoveAssetToBundle(m_ConcreteAssets, forcedNewName, forcedNewVariant);
-        }
-
-        internal string TotalSize()
-        {
-            if (m_TotalSize == 0)
-                return "--";
-            return EditorUtility.FormatBytes(m_TotalSize);
         }
 
         internal override void RefreshAssetList()
@@ -467,7 +493,20 @@ namespace AssetBundleBrowser.AssetBundleModel
             }
             m_Dirty = (dependents != m_DependentAssets.Count) || (bundleDep != m_BundleDependencies.Count);
             if (m_Dirty || m_DoneUpdating)
+            {
                 RefreshMessages();
+
+                var filePath = Model.DataSource.GetRealAssetBundleFolderPath() + "/" + m_Name.shortName;
+                //Debug.LogError(filePath);
+                if (File.Exists(filePath))
+                {
+                    var fileInfo = new FileInfo(filePath);
+                    if (fileInfo.Exists)
+                        m_BundleSize = fileInfo.Length;
+                    else
+                        m_BundleSize = 0;
+                }
+            }
         }
 
         private void GatherDependencies(AssetInfo asset, string parentBundle = "")
@@ -864,7 +903,20 @@ namespace AssetBundleBrowser.AssetBundleModel
             }
 
             if (m_Dirty || m_DoneUpdating)
+            {
                 RefreshMessages();
+
+                //var filePath = Model.DataSource.GetRealAssetBundleFolderPath() + "/" + m_Name.shortName;
+                //Debug.LogError(filePath);
+                //if (File.Exists(filePath))
+                //{
+                //    var fileInfo = new FileInfo(filePath);
+                //    if (fileInfo.Exists)
+                //        m_BundleSize = fileInfo.Length;
+                //    else
+                //        m_BundleSize = 0;
+                //}
+            }
         }
         internal override bool doneUpdating
         {

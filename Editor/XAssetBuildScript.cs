@@ -1,4 +1,3 @@
-#define USE_SBP
 
 using System;
 using System.Collections.Generic;
@@ -6,12 +5,8 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using System.Linq;
-
-
-#if USE_SBP
 using UnityEngine.Build.Pipeline;
 using UnityEditor.Build.Pipeline;
-#endif
 
 /*
  * TODO:
@@ -181,7 +176,7 @@ namespace Saro.XAsset.Build
             var builtInScenes = GetBuiltScenesFromXAssetSettings();
             if (builtInScenes.Length == 0)
             {
-                Debug.Log("Built In Scenes is empty.");
+                Debug.LogError("Built In Scenes is empty. Nothing to build!");
                 return;
             }
 
@@ -193,9 +188,10 @@ namespace Saro.XAsset.Build
             {
                 scenes = builtInScenes,
                 locationPathName = outputPath + targetName,
-#if !USE_SBP
-                assetBundleManifestPath = GetAssetBundleManifestFilePath(),
-#endif
+
+                // TODO sbp need this?
+                //assetBundleManifestPath = GetAssetBundleManifestFilePath(),
+
                 target = EditorUserBuildSettings.activeBuildTarget,
             };
 
@@ -226,14 +222,10 @@ namespace Saro.XAsset.Build
 
         public static void BuildAssetBundles()
         {
-#if USE_SBP
             SBPBuildAssetBundles();
-#else   
-            LegacyBuildAssetBundles();
-#endif
         }
 
-        [System.Obsolete("use sbp!")]
+        [System.Obsolete("use sbp!", true)]
         private static void LegacyBuildAssetBundles()
         {
             var outputFolder = CreateAssetBundleDirectory();
@@ -250,7 +242,7 @@ namespace Saro.XAsset.Build
 
             var xassetManifest = GetXAssetManifest();
             var dirs = new List<string>();
-            var assets = new List<AssetRef>();
+            var assetRefs = new List<AssetRef>();
             var bundles = assetBundleManifest.GetAllAssetBundles();
             var bundle2Ids = new Dictionary<string, int>(StringComparer.Ordinal);
             for (var index = 0; index < bundles.Length; index++)
@@ -305,18 +297,17 @@ namespace Saro.XAsset.Build
                         dir = index,
                         name = Path.GetFileName(path),
                     };
-                    assets.Add(asset);
+                    assetRefs.Add(asset);
                 }
                 catch (Exception e)
                 {
                     Debug.LogError($"{item.bundle} {index} {Path.GetFileName(path)}");
                     throw e;
                 }
-
             }
 
             xassetManifest.dirs = dirs.ToArray();
-            xassetManifest.assets = assets.ToArray();
+            xassetManifest.assets = assetRefs.ToArray();
             xassetManifest.bundles = bundleRefs.ToArray();
 
             EditorUtility.SetDirty(xassetManifest);
@@ -324,8 +315,10 @@ namespace Saro.XAsset.Build
             AssetDatabase.Refresh();
 
             var manifestBundleName = "xassetmanifest.unity3d";
-            assetBundleBuilds = new[] {
-                new AssetBundleBuild {
+            assetBundleBuilds = new[]
+            {
+                new AssetBundleBuild
+                {
                     assetNames = new[] { AssetDatabase.GetAssetPath (xassetManifest), },
                     assetBundleName = manifestBundleName
                 }
@@ -340,7 +333,6 @@ namespace Saro.XAsset.Build
             //Update.VersionList.BuildVersionList(outputFolder, s_DatFolder, bundles, version);
         }
 
-#if USE_SBP
         private static void SBPBuildAssetBundles()
         {
             var outputFolder = CreateAssetBundleDirectory();
@@ -369,7 +361,7 @@ namespace Saro.XAsset.Build
             var assetBundleManifest = result.BundleInfos;
             var xassetManifest = GetXAssetManifest();
             var dirs = new List<string>();
-            var assets = new List<AssetRef>();
+            var assetRefs = new List<AssetRef>();
             var bundles = assetBundleManifest.Keys.ToArray();
             var bundle2Ids = new Dictionary<string, int>(StringComparer.Ordinal);
 
@@ -424,7 +416,7 @@ namespace Saro.XAsset.Build
                         dir = index,
                         name = Path.GetFileName(path),
                     };
-                    assets.Add(asset);
+                    assetRefs.Add(asset);
                 }
                 catch (Exception e)
                 {
@@ -435,19 +427,19 @@ namespace Saro.XAsset.Build
             }
 
             xassetManifest.dirs = dirs.ToArray();
-            xassetManifest.assets = assets.ToArray();
+            xassetManifest.assets = assetRefs.ToArray();
             xassetManifest.bundles = bundleRefs.ToArray();
 
             EditorUtility.SetDirty(xassetManifest);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            var manifestBundleName = "xassetmanifest.unity";
+            var manifestBundleName = "xassetmanifest.unity3d";
             assetBundleBuilds = new[]
             {
                 new AssetBundleBuild
                 {
-                    assetNames = new[] { AssetDatabase.GetAssetPath (xassetManifest), },
+                    assetNames = new[] { AssetDatabase.GetAssetPath (xassetManifest) },
                     assetBundleName = manifestBundleName
                 }
             };
@@ -456,11 +448,10 @@ namespace Saro.XAsset.Build
 
             var version = GetXAssetBuildGroups().AddVersion();
 
-            // TODO 打vfs
+            // TODO 打vfs，可以考虑是否能使用 IBuildTask
             //ArrayUtility.Add(ref bundles, manifestBundleName);
             //Update.VersionList.BuildVersionList(outputFolder, s_DatFolder, bundles, version);
         }
-#endif
 
 
         private static string GetBuildTargetAppName(BuildTarget target)
@@ -470,12 +461,12 @@ namespace Saro.XAsset.Build
             if (GetXAssetSettings().buildSingleFolder)
             {
                 name = PlayerSettings.productName;
-                time = string.Empty;
+                time = "0";
             }
             else
             {
-                time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
                 name = PlayerSettings.productName + "-v" + PlayerSettings.bundleVersion + "." + GetXAssetBuildGroups().version;
+                time = DateTime.Now.ToString("yyyyMMdd-HHmmss");
             }
             switch (target)
             {

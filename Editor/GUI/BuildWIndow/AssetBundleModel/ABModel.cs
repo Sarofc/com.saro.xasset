@@ -54,7 +54,8 @@ namespace AssetBundleBrowser.AssetBundleModel
             {
                 if (s_DataSource == null)
                 {
-                    s_DataSource = new AssetDatabaseABDataSource();
+                    //s_DataSource = new AssetDatabaseABDataSource();
+                    s_DataSource = new XAssetABDataSource();
                 }
                 return s_DataSource;
             }
@@ -157,6 +158,8 @@ namespace AssetBundleBrowser.AssetBundleModel
         internal static string[] ValidateBundleList()
         {
             var bundleList = DataSource.GetAllAssetBundleNames();
+            return bundleList;
+
             bool valid = true;
             HashSet<string> bundleSet = new HashSet<string>();
             int index = 0;

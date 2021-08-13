@@ -1,7 +1,4 @@
-﻿#define USE_SBP
-
-#if USE_SBP
-
+﻿
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.Build.Content;
@@ -95,5 +92,3 @@ namespace Saro.XAsset.Build
         }
     }
 }
-
-#endif
