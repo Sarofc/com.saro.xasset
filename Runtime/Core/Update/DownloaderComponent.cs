@@ -5,34 +5,6 @@ using UnityEngine;
 
 namespace Saro.XAsset.Update
 {
-    [FObjectSystem]
-    internal class DownloaderComponentStartSystem : StartSystem<DownloaderComponent>
-    {
-        public override void Start(DownloaderComponent self)
-        {
-            self.StartDownload();
-        }
-    }
-
-    [FObjectSystem]
-    internal class DownloaderComponentUpdateSystem : UpdateSystem<DownloaderComponent>
-    {
-        public override void Update(DownloaderComponent self)
-        {
-            self.Update();
-        }
-    }
-
-    [FObjectSystem]
-    internal class DownloaderComponentDestroySystem : DestroySystem<DownloaderComponent>
-    {
-        public override void Destroy(DownloaderComponent self)
-        {
-            self.Destroy();
-        }
-    }
-
-
     public sealed class DownloaderComponent : FEntity
     {
         private const float k_BYTES_2_MB = 1f / (1024 * 1024);
@@ -294,4 +266,32 @@ namespace Saro.XAsset.Update
             }
         }
     }
+    [FObjectSystem]
+    internal class DownloaderComponentStartSystem : StartSystem<DownloaderComponent>
+    {
+        public override void Start(DownloaderComponent self)
+        {
+            self.StartDownload();
+        }
+    }
+
+    [FObjectSystem]
+    internal class DownloaderComponentUpdateSystem : UpdateSystem<DownloaderComponent>
+    {
+        public override void Update(DownloaderComponent self)
+        {
+            self.Update();
+        }
+    }
+
+    [FObjectSystem]
+    internal class DownloaderComponentDestroySystem : DestroySystem<DownloaderComponent>
+    {
+        public override void Destroy(DownloaderComponent self)
+        {
+            self.Destroy();
+        }
+    }
+
+
 }

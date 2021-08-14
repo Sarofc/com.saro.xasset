@@ -99,7 +99,12 @@ namespace Saro.XAsset.Update
             {
                 m_Stream.Seek(Position, SeekOrigin.Begin);
                 m_Request = UnityWebRequest.Get(Url);
-                m_Request.SetRequestHeader("Range", "bytes=" + (Offset + Position) + "-" + (Offset + Length - 1));
+
+                if (Offset > 0L)
+                {
+                    m_Request.SetRequestHeader("Range", "bytes=" + (Offset + Position) + "-" + (Offset + Length - 1));
+                }
+
                 m_Request.downloadHandler = this;
                 m_Request.SendWebRequest();
                 Debug.Log($"[{nameof(Download)}] Start Download：" + this);

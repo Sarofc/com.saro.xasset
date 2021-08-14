@@ -16,7 +16,7 @@ namespace Saro.XAsset.Update
      * Ê¹ÓÃEventSystem Œ¢ui½âñî
      * 
      */
-    public sealed class AssetUpdaterComponent : FEntity, IUpdater, INetworkMonitorListener
+    public sealed class ___AssetUpdaterComponent : FEntity, IUpdater, INetworkMonitorListener
     {
         private enum EStep
         {
@@ -695,27 +695,27 @@ namespace Saro.XAsset.Update
 
 
     [FObjectSystem]
-    internal class AssetUpdaterComponentAwakeSystem : AwakeSystem<AssetUpdaterComponent>
+    internal class ___AssetUpdaterComponentAwakeSystem : AwakeSystem<___AssetUpdaterComponent>
     {
-        public override void Awake(AssetUpdaterComponent self)
+        public override void Awake(___AssetUpdaterComponent self)
         {
             self.Awake();
         }
     }
 
     //[ObjectSystem]
-    //internal class AssetUpdaterComponentUpdateSystem : UpdateSystem<AssetUpdaterComponent>
+    //internal class ___AssetUpdaterComponentUpdateSystem : UpdateSystem<___AssetUpdaterComponent>
     //{
-    //    public override void Update(AssetUpdaterComponent self)
+    //    public override void Update(___AssetUpdaterComponent self)
     //    {
     //        self.Update();
     //    }
     //}
 
     [FObjectSystem]
-    internal class AssetUpdaterComponentDestroySystem : DestroySystem<AssetUpdaterComponent>
+    internal class ___AssetUpdaterComponentDestroySystem : DestroySystem<___AssetUpdaterComponent>
     {
-        public override void Destroy(AssetUpdaterComponent self)
+        public override void Destroy(___AssetUpdaterComponent self)
         {
             self.Destroy();
         }

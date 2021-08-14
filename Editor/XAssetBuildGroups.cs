@@ -12,10 +12,18 @@ namespace Saro.XAsset.Build
 {
     public enum ENameBy
     {
+        /// <summary>
+        /// 显示指定包名
+        /// </summary>
         Explicit,
+        /// <summary>
+        /// 以路径为包名
+        /// </summary>
         Path,
+        /// <summary>
+        /// 以目录为包名
+        /// </summary>
         Directory,
-        TopDirectory
     }
 
     [Serializable]
@@ -62,38 +70,52 @@ namespace Saro.XAsset.Build
         [Tooltip("Explicit的名称")]
         public string assetBundleName;
 
-        /// <summary>
-        /// 
-        /// </summary>
         /// <returns>根据搜索规则,获取所有资源的路径</returns>
         public string[] GetAssets()
         {
-            // BUG
-            // 没有处理 nameBy，单文件被忽略了
-
-            var patterns = searchPattern.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            if (!Directory.Exists(searchPath))
+            if (nameBy == ENameBy.Path)
             {
-                Debug.LogWarning("Rule searchPath not exist:" + searchPath);
-                return new string[0];
-            }
-
-            var getFiles = new List<string>(1024);
-            foreach (var item in patterns)
-            {
-                var files = Directory.GetFiles(searchPath, item, SearchOption.AllDirectories);
-                foreach (var file in files)
+                if (!File.Exists(searchPath))
                 {
-                    if (Directory.Exists(file)) continue;
-                    var ext = Path.GetExtension(file).ToLower();
-                    if ((ext == ".fbx" || ext == ".anim") && !item.Contains(ext)) continue;
-                    if (!XAssetBuildGroups.ValidateAsset(file)) continue;
-                    var asset = file.Replace("\\", "/");
-                    getFiles.Add(asset);
+                    Debug.LogWarning("Rule searchPath not exist:" + searchPath);
+                    return new string[0];
                 }
+
+                var ext = Path.GetExtension(searchPath).ToLower();
+                if (ext == ".fbx") return new string[0];
+                if (!XAssetBuildGroups.ValidateAsset(searchPath)) return new string[0];
+                var asset = searchPath.Replace("\\", "/");
+                return new string[] { asset };
+            }
+            else if (nameBy == ENameBy.Directory)
+            {
+                var patterns = searchPattern.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                if (!Directory.Exists(searchPath))
+                {
+                    Debug.LogWarning("Rule searchPath not exist:" + searchPath);
+                    return new string[0];
+                }
+
+                var getFiles = new List<string>(256);
+                foreach (var item in patterns)
+                {
+                    var files = Directory.GetFiles(searchPath, item, SearchOption.AllDirectories);
+                    foreach (var file in files)
+                    {
+                        if (Directory.Exists(file)) continue; // ?
+
+                        var ext = Path.GetExtension(file).ToLower();
+                        if (ext == ".fbx" && !item.Contains(ext)) continue;
+                        if (!XAssetBuildGroups.ValidateAsset(file)) continue;
+                        var asset = file.Replace("\\", "/");
+                        getFiles.Add(asset);
+                    }
+                }
+
+                return getFiles.ToArray();
             }
 
-            return getFiles.ToArray();
+            throw new NotImplementedException($"type {nameBy} not handled.");
         }
     }
 
@@ -101,9 +123,10 @@ namespace Saro.XAsset.Build
     public class XAssetBuildGroups : ScriptableObject
     {
         private readonly Dictionary<string, string> m_Asset2Bundles = new Dictionary<string, string>(1024, StringComparer.Ordinal);
-        private readonly Dictionary<string, string[]> m_Conflicted = new Dictionary<string, string[]>(1024, StringComparer.Ordinal);
-        private readonly HashSet<string> m_NeedOptimizeAssets = new HashSet<string>();
+        private readonly Dictionary<string, string[]> m_ConflictedAssets = new Dictionary<string, string[]>(1024, StringComparer.Ordinal);
+        private readonly HashSet<string> m_NeedOptimizedAssets = new HashSet<string>();
         private readonly Dictionary<string, HashSet<string>> m_Tracker = new Dictionary<string, HashSet<string>>(1024, StringComparer.Ordinal);
+
         [Header("Patterns")]
         public string searchPatternAsset = "*.asset";
         public string searchPatternController = "*.controller";
@@ -113,6 +136,7 @@ namespace Saro.XAsset.Build
         public string searchPatternPrefab = "*.prefab";
         public string searchPatternScene = "*.unity";
         public string searchPatternText = "*.txt,*.bytes,*.json,*.csv,*.xml,*htm,*.html,*.yaml,*.fnt";
+
         [Tooltip("是否用hash代替bundle名称")]
         public bool nameBundleByHash = true;
 
@@ -130,6 +154,10 @@ namespace Saro.XAsset.Build
 
         #region API
 
+        /// <summary>
+        /// 更新资源版本号
+        /// </summary>
+        /// <returns></returns>
         public System.Version AddVersion()
         {
             var versionObj = new System.Version(version);
@@ -197,7 +225,35 @@ namespace Saro.XAsset.Build
             {
                 return Utility.HashUtility.GetMd5Hash(name) + XAssetComponent.k_AssetExtension;
             }
-            return name.Replace("\\", "/").ToLower() + XAssetComponent.k_AssetExtension;
+
+            unsafe
+            {
+                //return name.Replace('\\', '/').Replace('/', '_').ToLower() + XAssetComponent.k_AssetExtension;
+
+                var newName = name + XAssetComponent.k_AssetExtension;
+                fixed (char* ptr = newName)
+                {
+                    var curPtr = ptr;
+                    while (*curPtr != '\0')
+                    {
+                        var chr = *curPtr;
+                        if (chr == '\\' || chr == '/')
+                        {
+                            *curPtr = '_';
+                        }
+                        else
+                        {
+                            // ToLower
+                            if ('A' <= chr && chr <= 'Z')
+                            {
+                                *curPtr = (char)(chr | 0x20);
+                            }
+                        }
+                        curPtr++;
+                    }
+                    return newName;
+                }
+            }
         }
 
         private void Track(string asset, string bundle)
@@ -216,7 +272,7 @@ namespace Saro.XAsset.Build
                 m_Asset2Bundles.TryGetValue(asset, out string bundleName);
                 if (string.IsNullOrEmpty(bundleName))
                 {
-                    m_NeedOptimizeAssets.Add(asset);
+                    m_NeedOptimizedAssets.Add(asset);
                 }
             }
         }
@@ -243,8 +299,8 @@ namespace Saro.XAsset.Build
         private void Clear()
         {
             m_Tracker.Clear();
-            m_NeedOptimizeAssets.Clear();
-            m_Conflicted.Clear();
+            m_NeedOptimizedAssets.Clear();
+            m_ConflictedAssets.Clear();
             m_Asset2Bundles.Clear();
         }
 
@@ -272,8 +328,8 @@ namespace Saro.XAsset.Build
         private void OptimizeAssets()
         {
             // 剔除冗余资源
-            int i = 0, max = m_Conflicted.Count;
-            foreach (var item in m_Conflicted)
+            int i = 0, max = m_ConflictedAssets.Count;
+            foreach (var item in m_ConflictedAssets)
             {
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("优化冲突{0}/{1}", i, max), item.Key, i / (float)max))
                     break;
@@ -282,14 +338,14 @@ namespace Saro.XAsset.Build
                 foreach (string asset in list)
                 {
                     if (!IsSceneAsset(asset))
-                        m_NeedOptimizeAssets.Add(asset);
+                        m_NeedOptimizedAssets.Add(asset);
                 }
                 i++;
             }
 
             i = 0;
-            max = m_NeedOptimizeAssets.Count;
-            foreach (var item in m_NeedOptimizeAssets)
+            max = m_NeedOptimizedAssets.Count;
+            foreach (var item in m_NeedOptimizedAssets)
             {
                 if (EditorUtility.DisplayCancelableProgressBar(string.Format("优化冗余{0}/{1}", i, max), item, i / (float)max))
                     break;
@@ -327,14 +383,14 @@ namespace Saro.XAsset.Build
                         allScene = false;
 
                         if (IsShaderAsset(asset))
-                            m_NeedOptimizeAssets.Add(asset);
+                            m_NeedOptimizedAssets.Add(asset);
                     }
                 }
 
                 //if (assetPaths.Exists(IsSceneAsset) && !assetPaths.TrueForAll(IsSceneAsset))
                 bool sceneBundleConflicted = hasScene && !allScene;
                 if (sceneBundleConflicted)
-                    m_Conflicted.Add(bundle, pathNames);
+                    m_ConflictedAssets.Add(bundle, pathNames);
 
                 // 获取所有被引用的资源
                 var dependencies = AssetDatabase.GetDependencies(pathNames, true);
@@ -348,7 +404,7 @@ namespace Saro.XAsset.Build
                             Track(asset, bundle);
 
                             if (IsShaderAsset(asset))
-                                m_NeedOptimizeAssets.Add(asset);
+                                m_NeedOptimizedAssets.Add(asset);
                         }
                     }
                 }
@@ -423,20 +479,6 @@ namespace Saro.XAsset.Build
                     case ENameBy.Directory:
                         {
                             m_Asset2Bundles[asset] = RuledAssetBundleName(Path.GetDirectoryName(asset));
-
-                            break;
-                        }
-                    case ENameBy.TopDirectory:
-                        {
-                            var dir = Path.GetDirectoryName(asset);
-                            if (!string.IsNullOrEmpty(dir))
-                                if (!dir.Equals(group.searchPath))
-                                {
-                                    var pos = dir.IndexOf("/", startIndex + 1, StringComparison.Ordinal);
-                                    if (pos != -1) dir = dir.Substring(0, pos);
-                                }
-
-                            m_Asset2Bundles[asset] = RuledAssetBundleName(dir);
 
                             break;
                         }
