@@ -5,6 +5,8 @@ using UnityEngine;
 
 namespace Saro.XAsset.Build
 {
+    // TODO
+    // 允许面板上定义打包宏，不影响editor的宏
     public sealed class BuildWindow : EditorWindow
     {
         [MenuItem("Tools/Build")]

@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using System.Linq;
 
 namespace AssetBundleBrowser
 {
@@ -30,7 +31,7 @@ namespace AssetBundleBrowser
 
             //members
             m_Editor = null;
-            if(bundle != null)
+            if (bundle != null)
             {
                 m_Editor = Editor.CreateEditor(bundle);
             }
@@ -53,7 +54,7 @@ namespace AssetBundleBrowser
                 EditorGUILayout.EndScrollView();
                 GUILayout.EndArea();
             }
-            else if(!string.IsNullOrEmpty(currentPath))
+            else if (!string.IsNullOrEmpty(currentPath))
             {
                 var style = new GUIStyle(GUI.skin.label);
                 style.alignment = TextAnchor.MiddleCenter;
@@ -68,10 +69,10 @@ namespace AssetBundleBrowser
                         if (!possibleFolderData.ignoredFiles.Contains(currentPath))
                             possibleFolderData.ignoredFiles.Add(currentPath);
 
-                        if(m_assetBundleInspectTab != null)
+                        if (m_assetBundleInspectTab != null)
                             m_assetBundleInspectTab.RefreshBundles();
                     }
-                } 
+                }
             }
         }
     }
@@ -79,7 +80,7 @@ namespace AssetBundleBrowser
     [CustomEditor(typeof(AssetBundle))]
     internal class AssetBundleEditor : Editor
     {
-        internal bool pathFoldout = false;
+        internal bool pathFoldout = true;
         internal bool advancedFoldout = false;
         public override void OnInspectorGUI()
         {
@@ -92,7 +93,7 @@ namespace AssetBundleBrowser
                 GUILayout.Label(new GUIContent("Name: " + bundle.name), leftStyle);
 
                 long fileSize = -1;
-                if(!System.String.IsNullOrEmpty(SingleBundleInspector.currentPath) && File.Exists(SingleBundleInspector.currentPath) )
+                if (!System.String.IsNullOrEmpty(SingleBundleInspector.currentPath) && File.Exists(SingleBundleInspector.currentPath))
                 {
                     System.IO.FileInfo fileInfo = new System.IO.FileInfo(SingleBundleInspector.currentPath);
                     fileSize = fileInfo.Length;
@@ -103,7 +104,8 @@ namespace AssetBundleBrowser
                 else
                     GUILayout.Label(new GUIContent("Size: " + EditorUtility.FormatBytes(fileSize)), leftStyle);
 
-                var assetNames = bundle.GetAllAssetNames();
+                var assetNames = bundle.GetAllAssetNames().ToList();
+                assetNames.AddRange(bundle.GetAllScenePaths());
                 pathFoldout = EditorGUILayout.Foldout(pathFoldout, "Source Asset Paths");
                 if (pathFoldout)
                 {
@@ -113,9 +115,7 @@ namespace AssetBundleBrowser
                     EditorGUI.indentLevel--;
                 }
 
-
                 advancedFoldout = EditorGUILayout.Foldout(advancedFoldout, "Advanced Data");
-
             }
 
             if (advancedFoldout)

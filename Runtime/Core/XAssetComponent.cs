@@ -117,11 +117,6 @@ namespace Saro.XAsset
         /// </summary>
         public static string s_UpdatePath { get; internal set; }
 
-        public void AddSearchPath(string path)
-        {
-            m_SearchPaths.Add(path);
-        }
-
         /// <summary>
         /// 获取当前平台AB包文件夹名字
         /// </summary>
@@ -167,8 +162,6 @@ namespace Saro.XAsset
             UpdateAssets();
             UpdateBundles();
 
-            m_SearchPaths.Clear();
-            m_ActiveVariants.Clear();
             m_AssetToBundles.Clear();
             m_BundleToDependencies.Clear();
         }
@@ -183,7 +176,6 @@ namespace Saro.XAsset
                 return null;
             }
 
-            path = GetExistPath(path);
             var request = new SceneAssetAsyncRequest(path, additive);
             if (!additive)
             {
@@ -290,8 +282,6 @@ namespace Saro.XAsset
 
         internal void OnManifestLoaded(XAssetManifest manifest)
         {
-            m_ActiveVariants.AddRange(manifest.activeVariants);
-
             var assets = manifest.assets;
             var dirs = manifest.dirs;
             var bundles = manifest.bundles;
@@ -376,8 +366,6 @@ namespace Saro.XAsset
                 return null;
             }
 
-            path = GetExistPath(path);
-
             AssetRequest request;
             if (m_Assets.TryGetValue(path, out request))
             {
@@ -425,44 +413,6 @@ namespace Saro.XAsset
 
         #endregion
 
-        #region Paths
-
-        private List<string> m_SearchPaths = new List<string>();
-
-        private string GetExistPath(string path)
-        {
-            if (!s_RuntimeMode)
-            {
-                if (File.Exists(path))
-                    return path;
-
-                foreach (var item in m_SearchPaths)
-                {
-                    var existPath = string.Format("{0}/{1}", item, path);
-                    if (File.Exists(existPath))
-                        return existPath;
-                }
-
-                ERROR("找不到资源路径" + path);
-                return path;
-            }
-
-            if (m_AssetToBundles.ContainsKey(path))
-                return path;
-
-            foreach (var item in m_SearchPaths)
-            {
-                var existPath = string.Format("{0}/{1}", item, path);
-                if (m_AssetToBundles.ContainsKey(existPath))
-                    return existPath;
-            }
-
-            ERROR("资源没有收集打包" + path);
-            return path;
-        }
-
-        #endregion
-
         #region Bundles
 
         private const int k_MAX_BUNDLES_PERFRAME = 0;
@@ -474,8 +424,6 @@ namespace Saro.XAsset
         private List<BundleRequest> m_UnusedBundles = new List<BundleRequest>();
 
         private List<BundleRequest> m_ToLoadBundles = new List<BundleRequest>();
-
-        private List<string> m_ActiveVariants = new List<string>();
 
         private Dictionary<string, string> m_AssetToBundles = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -540,7 +488,6 @@ namespace Saro.XAsset
                 return null;
             }
 
-            assetBundleName = RemapVariantName(assetBundleName);
             var url = GetDataPath(assetBundleName) + assetBundleName;
 
             if (m_UrlToBundles.TryGetValue(url, out BundleRequest bundleRequest))
@@ -635,47 +582,6 @@ namespace Saro.XAsset
                     }
                 }
             }
-        }
-
-        private string RemapVariantName(string assetBundleName)
-        {
-            var bundlesWithVariant = m_ActiveVariants;
-            // Get base bundle path
-            var baseName = assetBundleName.Split('.')[0];
-
-            var bestFit = int.MaxValue;
-            var bestFitIndex = -1;
-            // Loop all the assetBundles with variant to find the best fit variant assetBundle.
-            for (var i = 0; i < bundlesWithVariant.Count; i++)
-            {
-                var curSplit = bundlesWithVariant[i].Split('.');
-                var curBaseName = curSplit[0];
-                var curVariant = curSplit[1];
-
-                if (curBaseName != baseName)
-                    continue;
-
-                var found = bundlesWithVariant.IndexOf(curVariant);
-
-                // If there is no active variant found. We still want to use the first
-                if (found == -1)
-                    found = int.MaxValue - 1;
-
-                if (found >= bestFit)
-                    continue;
-                bestFit = found;
-                bestFitIndex = i;
-            }
-
-            if (bestFit == int.MaxValue - 1)
-            {
-                WARN("Ambiguous asset bundle variant chosen because there was no matching active variant: " +
-                   bundlesWithVariant[bestFitIndex]);
-            }
-
-            return bestFitIndex != -1 ?
-                bundlesWithVariant[bestFitIndex] :
-                assetBundleName;
         }
 
         #endregion

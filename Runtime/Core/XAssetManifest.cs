@@ -42,19 +42,13 @@ namespace Saro.XAsset
         public long len;
 
         /// <summary>
-        /// 包流哈希
+        /// 包哈希(Hash128)
         /// </summary>
         public string hash;
     }
 
     public class XAssetManifest : ScriptableObject
     {
-        /// <summary>
-        /// 已有变体
-        /// TODO 暂时未支持
-        /// </summary>
-        public string[] activeVariants = new string[0];
-
         /// <summary>
         /// 资源路径
         /// </summary>
@@ -69,6 +63,5 @@ namespace Saro.XAsset
         /// 包
         /// </summary>
         public BundleRef[] bundles = new BundleRef[0];
-
     }
 }

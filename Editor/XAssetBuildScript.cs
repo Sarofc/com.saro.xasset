@@ -7,6 +7,7 @@ using UnityEngine;
 using System.Linq;
 using UnityEngine.Build.Pipeline;
 using UnityEditor.Build.Pipeline;
+using Saro.XAsset.Update;
 
 /*
  * TODO:
@@ -350,7 +351,6 @@ namespace Saro.XAsset.Build
                 return;
             }
 
-
             //// sbpmanifest，运行时暂时用不到，测试用
             //var sbpManifest = ScriptableObject.CreateInstance<CompatibilityAssetBundleManifest>();
             //sbpManifest.SetResults(result.BundleInfos);
@@ -447,9 +447,13 @@ namespace Saro.XAsset.Build
             SBPBuildAssetBundle.BuildAssetBundles(outputFolder, assetBundleBuilds, options, buildTarget, out var results);
 
             var version = GetXAssetBuildGroups().AddVersion();
+            ArrayUtility.Add(ref bundles, manifestBundleName);
+
+            // 这里单独拆除去！
+            // create VersionManifest
+            VersionManifest.BuildVersionManifest(outputFolder, bundles, version);
 
             // TODO 打vfs，可以考虑是否能使用 IBuildTask
-            //ArrayUtility.Add(ref bundles, manifestBundleName);
             //Update.VersionList.BuildVersionList(outputFolder, s_DatFolder, bundles, version);
         }
 
