@@ -80,7 +80,7 @@ namespace Saro.XAsset
             var request = new ManifestRequest { AssetUrl = k_XAssetManifestAsset };
             AddAssetRequest(request);
 
-            var tcs = FTask<bool>.Create(true);
+            var tcs = FTask<bool>.Create();
 
             request.Completed += (req) =>
             {
@@ -91,7 +91,6 @@ namespace Saro.XAsset
                 }
 
                 tcs.SetResult(!req.IsError);
-                tcs = null;
             };
 
             return await tcs;
@@ -223,7 +222,7 @@ namespace Saro.XAsset
             return LoadAssetInternal(path, type, false);
         }
 
-        public FTask<T> LoadAssetAsync<T>(string path) where T : UnityEngine.Object
+        public (FTask<T> task, IAssetRequest request) LoadAssetAsync<T>(string path) where T : UnityEngine.Object
         {
             var request = LoadAssetInternal(path, typeof(T), true);
             var tcs = FTask<T>.Create();
@@ -231,10 +230,10 @@ namespace Saro.XAsset
             {
                 tcs.SetResult(_request.Asset as T);
             };
-            return tcs;
+            return (tcs, request);
         }
 
-        public FTask<bool> LoadSceneAsync(string path, bool additive = false)
+        public (FTask<bool> task, IAssetRequest request) LoadSceneAsync(string path, bool additive = false)
         {
             var request = LoadSceneCallback(path, additive);
             var tcs = FTask<bool>.Create();
@@ -242,7 +241,7 @@ namespace Saro.XAsset
             {
                 tcs.SetResult(!_request.IsError);
             };
-            return tcs;
+            return (tcs, request);
         }
 
         public void UnloadAsset(IAssetRequest asset)

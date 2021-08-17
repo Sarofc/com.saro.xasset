@@ -5,7 +5,7 @@ namespace Saro.XAsset.Build
 {
     internal partial class BuildMethods : IBuildProcessor
     {
-        [XAssetBuildMethod(-2, "Clear AssetBundleNames", false)]
+        [XAssetBuildMethod(-2, "ClearAssetBundleNames", false)]
         private static void ClearAssetBundles()
         {
             XAssetBuildScript.ClearAssetBundleNames();
@@ -19,8 +19,8 @@ namespace Saro.XAsset.Build
         //    Debug.Log("[XAsset] MarkAssetBundleNames");
         //}
 
-        [XAssetBuildMethod(0, "ApplyBuildRules", false)]
-        private static void ApplyBuildRules()
+        [XAssetBuildMethod(0, "ApplyBuildGroups", false)]
+        private static void ApplyBuildGroups()
         {
             var watch = new System.Diagnostics.Stopwatch();
             watch.Start();

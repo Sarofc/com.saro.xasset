@@ -28,6 +28,7 @@ namespace Saro.XAsset.Update
 
     // TODO
     // 下载限速
+    // API接口优化
     public class Download
     {
         #region Static
@@ -444,7 +445,6 @@ namespace Saro.XAsset.Update
         }
 
         #endregion
-
 
         private static void INFO(string msg)
         {
