@@ -48,6 +48,13 @@ namespace Saro.XAsset.Build
             Debug.Log($"[XAsset] Copy AssetBundles to SreammingFolder: {destFolder}");
         }
 
+        [XAssetBuildMethod(30, "Upload Assets To FileServer", false)]
+        private static void UploadAssetsToFileServer()
+        {
+            // Test
+            XAssetBuildScript.UploadAssetsToFileServer("http://localhost:8088/DLC/Windows");
+        }
+
         [XAssetBuildMethod(50, "Build Player")]
         private static void BuildPlayer()
         {

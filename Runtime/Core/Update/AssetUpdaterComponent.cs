@@ -33,7 +33,7 @@ namespace Saro.XAsset.Update
         public IUpdater Listener { get; set; }
 
         // TODO 资源地址应该读取配置来获取,且配置是可热更的
-        [SerializeField] private string m_AssetURL = "http://127.0.0.1:7888";
+        public string DlcUrl { get; set; }
 
         private EStep m_Step;
         private DownloaderComponent m_Downloader;
@@ -252,7 +252,7 @@ namespace Saro.XAsset.Update
 
         private string GetDownloadURL(string fileName)
         {
-            return string.Format("{0}/DLC/{1}/{2}", m_AssetURL, XAssetComponent.GetCurrentPlatformAssetBundleFolderName(), fileName);
+            return string.Format("{0}/DLC/{1}/{2}", DlcUrl, XAssetComponent.GetCurrentPlatformAssetBundleFolderName(), fileName);
         }
 
         private string GetDownloadCachePath()

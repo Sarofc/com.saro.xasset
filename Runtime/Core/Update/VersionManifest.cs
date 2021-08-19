@@ -82,12 +82,19 @@ namespace Saro.XAsset.Update
 
             var retList = new VersionManifest();
 
-            using (var fs = File.OpenRead(versionListPath))
+            try
             {
-                using (var br = new BinaryReader(fs))
+                using (var fs = File.OpenRead(versionListPath))
                 {
-                    retList.Deserialize(br);
+                    using (var br = new BinaryReader(fs))
+                    {
+                        retList.Deserialize(br);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Log.INFO(nameof(VersionManifest), e.ToString());
             }
 
             return retList;

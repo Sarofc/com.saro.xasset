@@ -111,6 +111,17 @@ namespace Saro.XAsset.Build
             }
         }
 
+        public static void UploadAssetsToFileServer(string url)
+        {
+            if (!Directory.Exists(s_DLCFolder)) return;
+
+            var files = Directory.GetFiles(s_DLCFolder);
+
+            // TODO filter file
+
+            Net.HttpHelper.Upload(url, files);
+        }
+
         public static string GetPlatformName()
         {
             return GetPlatformForAssetBundles(EditorUserBuildSettings.activeBuildTarget);
