@@ -2,6 +2,7 @@
 
 using Saro.Core;
 using Saro.Tasks;
+using Saro.XAsset.Update;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,10 +30,16 @@ namespace Saro.XAsset
 
 #if UNITY_EDITOR
         internal static bool s_RuntimeMode = true;
+        internal static Func<string, Type, UnityEngine.Object> s_EditorLoader = null;
 #else
         internal readonly static bool s_RuntimeMode = true;
 #endif
-        internal static Func<string, Type, UnityEngine.Object> s_EditorLoader = null;
+
+        public delegate FTask<TResult> OnResNotFoundDelegate<TResult>(string path);
+
+        public event OnResNotFoundDelegate<UnityEngine.Object> OnAssetNotFound = null;
+        public event OnResNotFoundDelegate<bool> OnSceneNotFound = null;
+
 
         [System.Diagnostics.Conditional("DEBUG_XASSET")]
         internal static void INFO(string msg)
@@ -95,7 +102,6 @@ namespace Saro.XAsset
 
             return await tcs;
         }
-
 
         /// <summary>
         /// 读取所有资源路径
@@ -228,7 +234,22 @@ namespace Saro.XAsset
             var tcs = FTask<T>.Create();
             request.Completed += _request =>
             {
-                tcs.SetResult(_request.Asset as T);
+                var asset = _request.Asset as T;
+                if (asset != null)
+                {
+                    tcs.SetResult(asset);
+                }
+                else
+                {
+                    if (OnAssetNotFound != null)
+                    {
+                        tcs = OnAssetNotFound(path) as FTask<T>;
+                    }
+                    else
+                    {
+                        tcs.SetResult(null);
+                    }
+                }
             };
             return (tcs, request);
         }
@@ -239,7 +260,21 @@ namespace Saro.XAsset
             var tcs = FTask<bool>.Create();
             request.Completed += _request =>
             {
-                tcs.SetResult(!_request.IsError);
+                if (!_request.IsError)
+                {
+                    tcs.SetResult(true);
+                }
+                else
+                {
+                    if (OnAssetNotFound != null)
+                    {
+                        tcs = OnSceneNotFound(path);
+                    }
+                    else
+                    {
+                        tcs.SetResult(false);
+                    }
+                }
             };
             return (tcs, request);
         }

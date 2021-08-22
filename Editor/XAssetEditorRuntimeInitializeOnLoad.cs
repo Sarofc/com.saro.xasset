@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#if UNITY_EDITOR
+
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,40 +15,10 @@ namespace Saro.XAsset.Build
 #endif
         private static void OnInitialize()
         {
-#if UNITY_EDITOR
             XAssetComponent.s_RuntimeMode = XAssetBuildScript.GetXAssetSettings().runtimeMode;
             XAssetComponent.s_EditorLoader = AssetDatabase.LoadAssetAtPath;
-#endif
-        }
-
-        [System.Obsolete("没用")]
-        void ProgressEditorSceneSettings()
-        {
-            var assets = new List<string>();
-            var rules = XAssetBuildScript.GetXAssetBuildGroups();
-            foreach (var asset in rules.scenesInBuild)
-            {
-                var path = AssetDatabase.GetAssetPath(asset);
-                if (string.IsNullOrEmpty(path))
-                {
-                    continue;
-                }
-                assets.Add(path);
-            }
-            foreach (var rule in rules.groups)
-            {
-                if (rule.searchPattern.Contains("*.unity"))
-                {
-                    assets.AddRange(rule.GetAssets());
-                }
-            }
-            var scenes = new EditorBuildSettingsScene[assets.Count];
-            for (var index = 0; index < assets.Count; index++)
-            {
-                var asset = assets[index];
-                scenes[index] = new EditorBuildSettingsScene(asset, true);
-            }
-            EditorBuildSettings.scenes = scenes;
         }
     }
 }
+
+#endif

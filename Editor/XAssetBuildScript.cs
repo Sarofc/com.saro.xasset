@@ -119,7 +119,7 @@ namespace Saro.XAsset.Build
 
             // TODO filter file
 
-            Net.HttpHelper.Upload(url, files);
+            Net.HttpHelper.UploadFiles(url, files);
         }
 
         public static string GetPlatformName()
@@ -218,7 +218,7 @@ namespace Saro.XAsset.Build
             }
 
             BuildPipeline.BuildPlayer(buildPlayerOptions);
-            OpenFolderUtility.OpenDirectory(outputPath);
+            Utility.OpenFolderUtility.OpenDirectory(outputPath);
         }
 
         private static string CreateAssetBundleDirectory()

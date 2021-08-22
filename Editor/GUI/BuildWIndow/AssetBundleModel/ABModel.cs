@@ -32,7 +32,7 @@ namespace AssetBundleBrowser.AssetBundleModel
         private static Dictionary<string, HashSet<string>> s_DependencyTracker = new Dictionary<string, HashSet<string>>();
 
         private static bool s_InErrorState = false;
-        const string k_DefaultEmptyMessage = "Drag assets here or right-click to begin creating bundles.";
+        const string k_DefaultEmptyMessage = "No bundles to show.";
         const string k_ProblemEmptyMessage = "There was a problem parsing the list of bundles. See console.";
         private static string s_EmptyMessageString;
 
